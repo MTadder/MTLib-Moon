@@ -1,8 +1,8 @@
 love = require "love"
-assert love -- Make sure we can access the LÖVE
+assert love
 
 steam = require "luasteam"
-assert steam -- Make sure we can access the Steam API
+assert steam
 
 assertTypes = (ExpectedType, ...) ->
     if (type(ExpectedType) != 'string')
@@ -65,11 +65,9 @@ class button -- ui
     Update: () =>
         mouseX, mouseY = love.mouse.getPosition!
         if withinRegion({x:mouseX, y:mouseY}, @data)
-            -- is hovering
             if @data.hooks.hover != nil
                 @data.hooks.hover!
             if love.mouse.isDown @data.key
-                -- is pressing using the proper key.
                 if @data.hooks.press != nil
                     @data.hooks.press!
             
@@ -78,12 +76,9 @@ class button -- ui
         love.graphics.rectangle "line", @data.x, @data.y, @data.w, @data.h
         love.graphics.printf @text, @data.x, @data.y + 5, @data.w, "center"
 
--- class buttonBar -- TODO
-
--- Declare return module
 {
     __Author: [[MTadder / Ayden G.W.]]
-    __Version: (0xD + 0x1 + 0x3 + 0x6) /100
+    __Version: (0xD + 0x1 + 0x4 + 0x7) /100
     __Date: [[04/10/21]]
     __Date_Format: [[MM/DD/YYYY]]
     
@@ -107,18 +102,14 @@ class button -- ui
     }
     graphics: {
         Scale: (Ratio) ->
-            -- Scale the LOVE window to the current display based on the provided ratio
             Ratio or= 1
-            -- Fetch current window flags for persistence
             _, _, currentFlags = love.window.getMode!
-            -- Setup screen table by fetching the monitor dimensions
             screen =
                 w: nil
                 h: nil
             with monW, monH = love.window.getDesktopDimensions currentFlags.display
                 screen.w = monW
                 screen.h = monH
-            -- Calculate window data
             winW = math.floor(screen.w / Ratio)
             winH = math.ceil(screen.h / Ratio)
             window =
@@ -126,7 +117,6 @@ class button -- ui
                 y: math.ceil((screen.h / 2) - (winH / 2))
             currentFlags.x = window.x
             currentFlags.y = window.y
-            -- Tell LOVE to use this.
             love.window.setMode winW, winH, currentFlags
             return screen, window
         ui: {
@@ -144,10 +134,10 @@ class button -- ui
             steam.shutdown!
     }
     strings: {
-        Deserialize: (Serial) -> -- Deserializes a serialized table with delimiters
+        Deserialize: (Serial) ->
             assertTypes "string", Serial
             return nil
-        Serialize: (Tbl, Delimiter) -> -- Serialized a table with delimiters
+        Serialize: (Tbl, Delimiter) ->
             assertTypes "table", Tbl
             assertTypes "number", Delimiter
             serializeTbl(Tbl, Delimiter)
@@ -155,7 +145,6 @@ class button -- ui
             return Tbl[math.random(1, #Tbl)]
     }
     math: {
-        -- Linear Interpolation
         Lerp: (A, B, C) ->
             assertTypes "number", A, B, C
             return (1 - C) * A + C * B
