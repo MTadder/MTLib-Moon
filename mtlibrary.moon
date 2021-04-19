@@ -123,13 +123,6 @@ class button
             assertTypes "table", Tbl
             assertTypes "number", Delimiter
             serializeTbl(Tbl, Delimiter)
-        RandomValue: (Tbl) ->
-            return Tbl[math.random(1, #Tbl)]
-        RandomTable: (Indices, MinValue, MaxValue, Scale) ->
-            rndmTbl = {}
-            for i = 1, Indices
-                rndmTbl[i] = math.random(MinValue, MaxValue) * Scale
-            return rndmTbl
     }
     math: {
         Lerp: (A, B, C) ->
@@ -138,6 +131,13 @@ class button
         Distance: (X1, X2, Y1, Y2) ->
             assertTypes "number", X1, X2, Y1, Y2
             return (math.sqrt((X1 - X2)^2 + (Y1 - Y2)^2))
+        RandomValue: (Tbl) ->
+            return Tbl[math.random(1, #Tbl)]
+        RandomTable: (Indices, MinValue, MaxValue, Scale) ->
+            rndmTbl = {}
+            for i = 1, Indices
+                rndmTbl[i] = math.random(MinValue, MaxValue) * Scale
+            return rndmTbl
         Clamp: clampValue
         WithinRegion: withinRegion
     }
