@@ -1,8 +1,6 @@
 love = require "love"
-assert love
-
-steam = require "luasteam"
-assert steam
+sfxrl = require "sfxr"
+assert love, sfxrl
 
 assertTypes = (ExpectedType, ...) ->
     if (type(ExpectedType) != 'string')
@@ -11,13 +9,10 @@ assertTypes = (ExpectedType, ...) ->
         if (type(testValue) != ExpectedType)
             error("Type mismatch at ##{testIndex}, expected a '#{ExpectedType}', got a '#{type(testValue)}'")
 
-clampVal = (Val, Min, Max) ->
-    return (math.max(Min, math.min(Val, Max)))
+clampValue = (Value, Min, Max) -> (math.max(Min, math.min(Value, Max)))
 
-serializeTbl = (Tbl, Seperator) ->
+serializeTbl = (Tbl, Seperator=", ") ->
     if type(Tbl) != "table" return tostring Tbl
-
-    Seperator or= ", "
     serial = '{'
     for index,value in pairs Tbl
         valType = type value
@@ -35,27 +30,25 @@ withinRegion = (Query, Region) ->
                 if Query.y <= (Region.y + Region.h)
                     return true
     return false
-fs = {
-    Exists: (QueryPath) ->
-        assertTypes "string", QueryPath
-        foundFile = false
-        with fStream = io.open QueryPath, 'r'
-            if fStream == nil
-                print("failed to find a file at '#{QueryPath}'")
-            else
-                foundFile = true
-                fStream\close!
-        return foundFile
-}
 
-class button -- ui
+fileExists: (QueryPath) ->
+    assertTypes "string", QueryPath
+    foundFile = false
+    with fStream = io.open QueryPath, 'r'
+        if fStream == nil
+            print("failed to find a file at '#{QueryPath}'")
+        else
+            foundFile = true
+            fStream\close!
+    return foundFile
+
+class button
     new: (LabelText, XPos, YPos, Width, Height) =>
         assertTypes "string", LabelText
         assertTypes "number", XPos, YPos, Width, Height
         @text = LabelText
         @data = { x:XPos, y:YPos, w:Width, h:Height,
-            hooks:{ hover:nil, press:nil},
-            key:1}
+            hooks:{ hover:nil, press:nil}, key:1}
     Hook: (func, isPress = true) =>
         assertTypes "function", func
         if isPress
@@ -70,48 +63,28 @@ class button -- ui
             if love.mouse.isDown @data.key
                 if @data.hooks.press != nil
                     @data.hooks.press!
-            
-
     Draw: () =>
         love.graphics.rectangle "line", @data.x, @data.y, @data.w, @data.h
         love.graphics.printf @text, @data.x, @data.y + 5, @data.w, "center"
 
 {
-    __Author: [[MTadder / Ayden G.W.]]
-    __Version: (0xD + 0x1 + 0x4 + 0x7) /100
-    __Date: [[04/10/21]]
+    __Author: [[MTadder]]
+    __Version: [[Slime Green Bean]]
+    __Date: [[04/19/21]]
     __Date_Format: [[MM/DD/YYYY]]
-    
     logic: {
-        AssertTypes: assertTypes
-        State: class
-            new: (Identifier) =>
-                @id = Identifier
     }
     geometry: {
-        Position: class
-            new: (data) =>
-                if type(data) == "number"
-                    @pos = {data,data}
-                else
-                    error "Positional argument should be a number. not a #{type data}"
-        Circle: class
-            new: (Radius) =>
-                assertTypes "number", Radius
-                @radius = Radius
     }
     graphics: {
-        Scale: (Ratio) ->
-            Ratio or= 1
-            _, _, currentFlags = love.window.getMode!
-            screen =
-                w: nil
-                h: nil
-            with monW, monH = love.window.getDesktopDimensions currentFlags.display
-                screen.w = monW
-                screen.h = monH
-            winW = math.floor(screen.w / Ratio)
-            winH = math.ceil(screen.h / Ratio)
+        ScaleWindow: (Ratio=1) ->
+            _,_, currentFlags = love.window.getMode!
+            screen = {}
+            monW, monH = love.window.getDesktopDimensions currentFlags.display
+            screen.w = monW
+            screen.h = monH
+            winW = math.floor screen.w / Ratio
+            winH = math.ceil screen.h / Ratio
             window =
                 x: math.floor((screen.w / 2) - (winW / 2))
                 y: math.ceil((screen.h / 2) - (winH / 2))
@@ -121,17 +94,26 @@ class button -- ui
             return screen, window
         ui: {
             Button: button
-            ButtonBar: buttonBar
         }
+        RenderTarget: class
+            new: (Width, Height) => 
+                @target = love.graphics.newImageData(Width, Height)
+            Paint: (XPos, YPos, Color={R:0, G:0, B:0, A:255}) =>
+                if @target
+                    @target\setPixel XPos, YPos, Color.R, Color.G, Color.B, Color.A
+                    return true
+                return false
+            Encode: (DestinationFile, Format="png") =>
+                if @target\getSize! > 1
+                    @target\encode Format, DestinationFile
+                    return true
+                return false
+
     }
     system: {
-        files: fs
+        Exists: fileExists
     }
-    steam: {
-        Begin: () ->
-            steam.init!
-        End: () ->
-            steam.shutdown!
+    sound: {
     }
     strings: {
         Deserialize: (Serial) ->
@@ -143,6 +125,11 @@ class button -- ui
             serializeTbl(Tbl, Delimiter)
         RandomValue: (Tbl) ->
             return Tbl[math.random(1, #Tbl)]
+        RandomTable: (Indices, MinValue, MaxValue, Scale) ->
+            rndmTbl = {}
+            for i = 1, Indices
+                rndmTbl[i] = math.random(MinValue, MaxValue) * Scale
+            return rndmTbl
     }
     math: {
         Lerp: (A, B, C) ->
@@ -151,7 +138,7 @@ class button -- ui
         Distance: (X1, X2, Y1, Y2) ->
             assertTypes "number", X1, X2, Y1, Y2
             return (math.sqrt((X1 - X2)^2 + (Y1 - Y2)^2))
-        Clamp: clampVal
+        Clamp: clampValue
         WithinRegion: withinRegion
     }
 }
