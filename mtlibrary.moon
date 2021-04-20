@@ -2,14 +2,15 @@ love = require "love"
 sfxrl = require "sfxr"
 assert love, sfxrl
 
-assertTypes = (ExpectedType, ...) ->
-    if (type(ExpectedType) != 'string')
-        error("Argument #1 must be a string. got '#{type ExpectedType}'.")
+assertTypes = (ExpectedTypes, ...) -> -- Call an error if any of the arg's type does not match the first arg
+    if (type(ExpectedTypes) != 'string')
+        error("Argument #1 must be a string. got '#{type ExpectedTypes}'.")
     for testIndex, testValue in pairs {...}
-        if (type(testValue) != ExpectedType)
-            error("Type mismatch at ##{testIndex}, expected a '#{ExpectedType}', got a '#{type(testValue)}'")
+        if (type(testValue) != ExpectedTypes)
+            error("Type mismatch at ##{testIndex}, expected a '#{ExpectedTypes}', got a '#{type(testValue)}'")
 
-clampValue = (Value, Min, Max) -> (math.max(Min, math.min(Value, Max)))
+clampValue = (Value, Min, Max) ->  -- Clamp a value between two others
+    return (math.max(Min, math.min(Value, Max)))
 
 serializeTbl = (Tbl, Seperator=", ") ->
     if type(Tbl) != "table" return tostring Tbl
@@ -22,54 +23,48 @@ serializeTbl = (Tbl, Seperator=", ") ->
             serial ..= tostring(index) ..": " .. tostring(value) .. Seperator
     return string.sub(serial, 1, -3) .. '}'
 
-withinRegion = (Query, Region) ->
-    assertTypes "table", Query, Region
-    if Query.x >= Region.x
-        if Query.x <= (Region.x + Region.w)
-            if Query.y >= Region.y
-                if Query.y <= (Region.y + Region.h)
+withinRegion = (Query, Region) -> -- Test if a position lies within a bounding region
+    assertTypes "table", Query,Region
+    assert Query.X and Query.Y and Region.X and Region.Y and Region.W and Region.H
+    if Query.X >= Region.X and Query.X <= (Region.X + Region.W)
+            if Query.Y >= Region.Y and Query.Y <= (Region.Y + Region.H)
                     return true
     return false
 
-fileExists: (QueryPath) ->
+fileExists: (QueryPath) -> -- Tests if a file exists at a path
     assertTypes "string", QueryPath
-    foundFile = false
     with fStream = io.open QueryPath, 'r'
-        if fStream == nil
-            print("failed to find a file at '#{QueryPath}'")
-        else
-            foundFile = true
+        if fStream != nil
             fStream\close!
-    return foundFile
+            return true
+    print("failed to find a file at '#{QueryPath}'")
+    return false
+
+class loveColor
+    new: (R, G, B, A=1) =>
+        assertTypes "number", R,G,B,A
+        @data = { :R, :G, :B, :A }
 
 class button
-    new: (LabelText, XPos, YPos, Width, Height) =>
-        assertTypes "string", LabelText
-        assertTypes "number", XPos, YPos, Width, Height
-        @text = LabelText
-        @data = { x:XPos, y:YPos, w:Width, h:Height,
-            hooks:{ hover:nil, press:nil}, key:1}
-    Hook: (func, isPress = true) =>
-        assertTypes "function", func
-        if isPress
-            @data.hooks.press = func
-        else
-            @data.hooks.hover = func
+    new: (Label, X, Y, W, H) =>
+        assertTypes "string", Label
+        assertTypes "number", X,Y,W,H
+        @data = { :Label, :X, :Y, :W, :H, Key:1, IsPressed: false, IsHovered: false }
     Update: () =>
-        mouseX, mouseY = love.mouse.getPosition!
-        if withinRegion({x:mouseX, y:mouseY}, @data)
-            if @data.hooks.hover != nil
-                @data.hooks.hover!
-            if love.mouse.isDown @data.key
-                if @data.hooks.press != nil
-                    @data.hooks.press!
+        mousePos = {X: love.mouse.getX!, Y: love.mouse.getY!}
+        if withinRegion mousePos, @data
+            @data.IsHovered = true
+            if love.mouse.isDown @data.Key
+                @data.IsPressed = true
+        else 
+            @data.IsHovered = false
     Draw: () =>
-        love.graphics.rectangle "line", @data.x, @data.y, @data.w, @data.h
-        love.graphics.printf @text, @data.x, @data.y + 5, @data.w, "center"
+        love.graphics.rectangle "line", @data.X, @data.Y, @data.W, @data.H
+        love.graphics.printf @data.Label, @data.X, @data.Y + 5, @data.W, "center"
 
 {
     __Author: [[MTadder]]
-    __Version: [[Slime Green Bean]]
+    __Version: [[Blue Geanie]]
     __Date: [[04/19/21]]
     __Date_Format: [[MM/DD/YYYY]]
     logic: {
@@ -96,11 +91,15 @@ class button
             Button: button
         }
         RenderTarget: class
-            new: (Width, Height) => 
-                @target = love.graphics.newImageData(Width, Height)
-            Paint: (XPos, YPos, Color={R:0, G:0, B:0, A:255}) =>
+            new: (W, H) => 
+                @target = love.graphics.newImageData(W, H)
+            GetSize: () =>
+                return {W:@target\getWidth!, H:@target\getHeight!}
+            Sample: (X, Y) =>
+                return loveColor(unpack(@target\getPixel(X,Y)))
+            Paint: (X, Y, Color) =>
                 if @target
-                    @target\setPixel XPos, YPos, Color.R, Color.G, Color.B, Color.A
+                    @target\setPixel X, Y, unpack(Color.data)
                     return true
                 return false
             Encode: (DestinationFile, Format="png") =>
@@ -108,12 +107,12 @@ class button
                     @target\encode Format, DestinationFile
                     return true
                 return false
-
     }
     system: {
         Exists: fileExists
     }
     sound: {
+
     }
     strings: {
         Deserialize: (Serial) ->
@@ -132,7 +131,7 @@ class button
             assertTypes "number", X1, X2, Y1, Y2
             return (math.sqrt((X1 - X2)^2 + (Y1 - Y2)^2))
         RandomValue: (Tbl) ->
-            return Tbl[math.random(1, #Tbl)]
+            return Tbl[math.random(1, #Tbl)] or (math.random -math.huge!, math.huge!)
         RandomTable: (Indices, MinValue, MaxValue, Scale) ->
             rndmTbl = {}
             for i = 1, Indices
