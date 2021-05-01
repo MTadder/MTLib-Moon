@@ -1,11 +1,26 @@
-love = require "love"
+export love = require "love"
 export lSteam = require "luasteam"
-assert love, lSteam
+export sfxrl = require "sfxr"
+assert (love and lSteam and sfxrl)
 
-unpack or= table.unpack
+-- Lua-nces:
+--- A*0.5 is faster than A/2
+--- A*A is faster than A^2
+--- local var accesses are faster than global lookups
+--- @ipairs only iterates numeric indexes vs. @pairs
 
-lerp = (A, B, C) ->
-    return ((1 - C) * A + C * B)
+class Metadata
+    Author = [[MTadder@protonmail.com]]
+    new: (data) =>
+        @Date = os.date!
+        @Codename = data[1]
+        @Major = string.format("%X", data[2])
+        @Minor = string.format("%X", data[3])
+        @Package = string.format("%X", data[4])
+    __tostring: () =>
+        return ("#{@Codename} #{@Major}x#{@Minor}x#{@Package}")
+
+lerp = (A, B, C) -> ((1 - C) * A + C * B)
 cerp = (A, B, C) ->
     math.pi or= (3.1415)
     f = (1 - math.cos(C * math.pi) * 0.5)
@@ -15,28 +30,73 @@ normalize = (A, B) ->
     A = if (f == 0) then (0) else (A / 1)
     B = if (f == 0) then (0) else (B / 1)
     return A, B
-invLerp = (A, B, C) ->
-    return ((C - A) / (B - A))
-map = (Value, AMin, AMax, BMin, BMax) ->
-    return lerp(AMin, AMax, invLerp(BMin, BMax, Value))
-clamp = (Value, Min, Max) ->
-    return math.max(Min, math.min(Value, Max))
-sqrDistance = (X1, Y1, X2, Y2) ->
-    return math.sqrt((X1 - X2)^2 + (Y1 - Y2)^2)
-withinRegion = (Query, Region) ->
-    assert Query.X and Query.Y and Region.X and Region.Y and Region.W and Region.H
-    if (Query.X >= Region.X) and Query.X <= (Region.X + Region.W)
-            return (Query.Y >= Region.Y) and Query.Y <= (Region.Y + Region.H)
-    false
+invLerp = (A, B, C) -> ((C - A) / (B - A))
+map = (Value, AMin, AMax, BMin, BMax) -> lerp(AMin, AMax, invLerp(BMin, BMax, Value))
+clamp = (Value, Min, Max) -> math.max(Min, math.min(Value, Max))
+sqrtDistance = (X1, Y1, X2, Y2) -> math.sqrt((X1 - X2)*(X1 - X2) + (Y1 - Y2)*(Y1 - Y2))
+hypot = (A, B) -> math.sqrt((A*A) + (B*B))
 
-serializeTbl = (Tbl, Seperator=", ") ->
-    if type(Tbl) != "table"
-        Tbl = {Tbl or nil}
+rrs = { -- Real Rocket Science
+    TWR: (Force, Mass, Acceleration) -> (Force / (Mass * Acceleration))
+    DV: (M0, M1, ISP, Acceleration) -> (2.718281828459*(M0 / M1) * ISP * Acceleration)
+}
+
+withinRegion = (Query, Region) ->
+    assert (Query.X and Query.Y) and (Region.X and Region.Y and Region.W and Region.H)
+    if (Query.X >= Region.X) and (Query.X <= (Region.X + Region.W))
+            return (Query.Y >= Region.Y) and (Query.Y <= (Region.Y + Region.H))
+    return false
+
+class Element
+    Position: {X: 0, Y: 0}, Velocity: {X: 0, Y: 0, R: 0},
+    Rotation: 0, Scale: {X: 1, Y: 1}
+    update: (dT) =>
+        @Position.X += @Velocity.X * dT
+        @Position.Y += @Velocity.Y * dT
+        @Rotation += @Velocity.R * dT
+    new: =>
+
+class Projector extends Element
+    focus: (TargetX, TargetY) =>
+        wW, wH = love.graphics.getDimensions!
+        @Position.X = (((@Scale.X * wW)*0.5) + TargetX)
+        @Position.Y = (((@Scale.Y * wH)*0.5) + TargetY)
+
+    push: =>
+        if love.graphics.isActive! == true
+            love.graphics.push!
+            love.graphics.rotate(@Rotation)
+            love.graphics.scale(@Scale.X, @Scale.Y)
+            love.graphics.translate(@Position.X, @Position.Y)
+    pop: =>
+        if love.graphics.isActive! == true
+            love.graphics.pop!
+    new: => super!
+
+
+class Slatt
+    Handlers: {}, Members: {}
+    addMember: (MemberIndex, MemberValue) => 
+        if (MemberValue != nil) then @Members[MemberIndex] = (MemberValue)
+    try: (HandleName, ...) =>
+        if localCall = @Handlers[HandleName] then localCall(@, ...)
+    new: (Source) =>
+        if (Source != nil)
+            newHandles = nil
+            if type(Source) == "string"
+                newHandles = require(Source)
+            elseif type(Source) == "table" then newHandles = Source
+            for NewHandleI, NewHandleV in pairs(newHandles)
+                @Handlers[NewHandleI] = NewHandleV
+
+serialize = (target, Seperator=", ") ->
+    if type(target) != "table"
+        target = {target or nil}
     serial = '{'
-    for index,value in pairs Tbl
+    for index,value in pairs target
         serial ..= if (type(index) == "string") then "#{index}:" else "[#{tostring index}]:"
         if type(value) == "table"
-            serial ..= "#{serializeTbl(value, Seperator)}\n"
+            serial ..= "#{serialize(value, Seperator)}\n"
         elseif type(value) == "function"
             serial ..= "!#{Seperator}"
         elseif type(value) == "number"
@@ -45,144 +105,41 @@ serializeTbl = (Tbl, Seperator=", ") ->
             serial ..= "'#{tostring value}'#{Seperator}"
     return (string.sub(serial, 1, -3) .. '}')
 
-class Color
-    new: (R=1, G=1, B=1, A=1) =>
-        @data = { :R, :G, :B, :A }
-    __tostring: () =>
-        return "{R=#{@data.R}, G=#{@data.G}, B=#{@data.B}, A=#{@data.A}}"
-    __eq: (To) =>
-        rCompEq = (@data.R == To.data.R)
-        gCompEq = (@data.G == To.data.G)
-        bCompEq = (@data.B == To.data.B)
-        aCompEq = (@data.A == To.data.A)
-        return ( rCompEq and gCompEq and bCompEq and aCompEq )
-    __mul: (By) =>
-        if type(By) == "number"
-            for dataIndex,dataValue in ipairs(@data)
-                @data[dataIndex] = (dataValue * By)
-        elseif By.__name == @__name
-            @data.R *= By.R
-            @data.G *= By.G
-            @data.B *= By.B
-            @data.A *= By.A
-
-class RenderTarget
-    new: (W, H) => 
-        @target = love.image.newImageData(W, H)
-    draw: (X, Y) =>
-        targetImage = love.graphics.newImage @target
-        love.graphics.draw targetImage, X, Y
-    getSize: () =>
-        return {W:@target\getWidth!, H:@target\getHeight!}
-    getPixel: (X, Y) =>
-        return Color(unpack(@target\getPixel(X,Y)))
-    setPixel: (X, Y, pixelColor) =>
-        if @target != nil
-            @target\setPixel X, Y, pixelColor.R, pixelColor.G, pixelColor.B, pixelColor.A
-            return true
-        return false
-    encode: (DestinationFile, Format="png") =>
-        return @target\encode Format, "#{DestinationFile}.#{Format}"
-
-class Button
-    new: (Label, Geometry) =>
-        @data = { :Label, :Geometry, State:0 }
-    update: () =>
-        if @data.Geometry
-            @data.State = @data.Geometry\getState!
-    draw: (Mode="line") =>
-        @data.Geometry\draw Mode
-        width = (@data.Geometry.W or @data.Geometry.Radius)
-        love.graphics.printf @data.Label, @data.Geometry.X, @data.Geometry.Y + 5, width, "center"
-
-class Shape
-    new: (Pos={X:0, Y:0}) =>
-        @X, @Y = Pos.X, Pos.Y
-    getState: () =>
-        if @test != nil
-            return @test({X: love.mouse.getX!, Y: love.mouse.getY!})
-        else return (0)
-
-class Circle extends Shape
-    new: (Radius, Pos) =>
-        assert Radius
-        super(Pos)
-        @Radius = Radius
-    draw: (Mode="line") =>
-        love.graphics.circle(Mode, @X, @Y, @Radius)
-    test: (Pos) =>
-        assert Pos and (Pos.X and Pos.Y)
-        if sqrDistance(@X, @Y, Pos.X, Pos.Y) <= @Radius
-            if love.mouse.isDown 1
-                return (2)
-            return (1)
-        return (0)
-
-class Rectangle extends Shape
-    new: (Dimens, Pos) =>
-        assert Dimens and (Dimens.W and Dimens.H) and Pos and (Pos.X and Pos.Y)
-        super(Pos)
-        @data.W, @data.H = Dimens.W, Dimens.H
-    draw: (Mode="line")=>
-        love.graphics.rectangle(Mode, @data.X, @data.Y, @data.W, @data.H)
-    test: (Pos) =>
-        if withinRegion(Pos, @data)
-            if love.mouse.isDown 1
-                return (2)
-            return (1)
-        return (0)
-
-class Slate
-    new: () =>
-        @data = {Bank:{}, }
-
-        
 {
-    __Author: [[MTadder]]
-    __Version: [[Erutrun]]
-    __Date: [[04/23/21]]
-    __Date_Format: [[MM/DD/YYYY]]
-
+    meta: Metadata({"KLOE", 0, 3.3, 87})
     logic: {
-        :Shape
+        :Slatt
     }
-    geometry: {
-        :Circle
-        :Rectangle
-    }
+    geometry: nil
     graphics: {
-        :Color
-        :Button
-        :RenderTarget
-        :Slate
-
+        :Projector, :Element,
+        --NewQuads: (QuadFile, )
+        Center: ->
+            w, h = love.graphics.getDimensions!
+            return (w*0.5), (h*0.5)
         ScaleWindow: (Ratio=1) ->
-            _,_, currentFlags = love.window.getMode!
-            screen = {}
-            screen.w, screen.h = love.window.getDesktopDimensions currentFlags.display
-            winW = math.floor screen.w / Ratio
-            winH = math.ceil screen.h / Ratio
-            window =
-                x: math.floor((screen.w / 2) - (winW / 2))
-                y: math.ceil((screen.h / 2) - (winH / 2))
-            currentFlags.x = window.x
-            currentFlags.y = window.y
-            love.window.setMode winW, winH, currentFlags
+            mceil = math.ceil
+            oldW, oldH, currentFlags = love.window.getMode!
+            screen, window = {}, {}
+            screen.w, screen.h = love.window.getDesktopDimensions(currentFlags.display)
+            newWindowWidth, newWindowHeight = mceil(screen.w / Ratio), mceil(screen.h / Ratio)
+            if (oldW == newWindowWidth) and (oldH == newWindowHeight) then return nil, nil
+            window.display, window.w, window.h = currentFlags.display, newWindowWidth, newWindowHeight
+            window.x = mceil((screen.w*0.5) - (window.w*0.5))
+            window.y = mceil((screen.h*0.5) - (window.h*0.5))
+            currentFlags.x, currentFlags.y = window.x, window.y
+            love.window.setMode window.w, window.h, currentFlags
             return screen, window
     }
     strings: {
-        Serialize: serializeTbl
+        Serialize: serialize
     }
     math: {
-        Lerp: lerp
-        Cerp: cerp
-        InverseLerp: invLerp
-        Map: map
-        Distance: sqrDistance
+        Clamp: clamp,
         Random: (Tbl) ->
             if type(Tbl) == "table"
                 rndIndex = math.random(1, #Tbl)
-                for currIndex, currVal in ipairs Tbl
+                for currIndex, currVal in ipairs(Tbl)
                     if rndIndex == currIndex
                         return currVal
             elseif type(Tbl) == "number"
@@ -195,7 +152,6 @@ class Slate
                 for i = 1, Indices
                     rndmTbl[i] = math.random(MinValue, MaxValue)
                 return rndmTbl
-        Clamp: clamp
         WithinRegion: withinRegion
     }
 }
