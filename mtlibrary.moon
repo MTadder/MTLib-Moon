@@ -1,157 +1,270 @@
-export love = require "love"
-export lSteam = require "luasteam"
-export sfxrl = require "sfxr"
-assert (love and lSteam and sfxrl)
+-- [ = [ --
+META_INFO= [[KL0E]]
+--  @MTLibrary Developed by A.G.W. / @MTadder
+--  @Compatability list:
+--      @Busted, @Ubuntu, @Windows (@x32 | @x64)
+-- ] = ] --
 
--- Lua-nces:
---- A*0.5 is faster than A/2
---- A*A is faster than A^2
---- local var accesses are faster than global lookups
---- @ipairs only iterates numeric indexes vs. @pairs
+state = class State
+    members: {}
+    _include: (members) =>
+        for i,k in pairs(members) do @members[i] = k
+        return @
+    __add: (left, right) ->
+        if type(right) == type(left) then
+            if (left.__class == right.__class) then
+                left\_include(right.members)
+            else do left\_include(right)
+            return left
+    __call: (member, ...) =>
+        for i,k in pairs(@members) do
+            if (i == member) then
+                return k(...)
+        return nil
+    new: (source) =>
+        switch (type(source))
+            when "table" do
+                return (@ + source)
+            when "string" do
+                data = require(source)
+                return (@ + dat)
 
-class Metadata
-    Author = [[MTadder@protonmail.com]]
-    new: (data) =>
-        @Date = os.date!
-        @Codename = data[1]
-        @Major = string.format("%X", data[2])
-        @Minor = string.format("%X", data[3])
-        @Package = string.format("%X", data[4])
-    __tostring: () =>
-        return ("#{@Codename} #{@Major}x#{@Minor}x#{@Package}")
-
-lerp = (A, B, C) -> ((1 - C) * A + C * B)
-cerp = (A, B, C) ->
-    math.pi or= (3.1415)
-    f = (1 - math.cos(C * math.pi) * 0.5)
-    return (A * (1 - f) + (B * f))
-normalize = (A, B) ->
-    f = (A^2 + B^2)^.5
-    A = if (f == 0) then (0) else (A / 1)
-    B = if (f == 0) then (0) else (B / 1)
-    return A, B
-invLerp = (A, B, C) -> ((C - A) / (B - A))
-map = (Value, AMin, AMax, BMin, BMax) -> lerp(AMin, AMax, invLerp(BMin, BMax, Value))
-clamp = (Value, Min, Max) -> math.max(Min, math.min(Value, Max))
-sqrtDistance = (X1, Y1, X2, Y2) -> math.sqrt((X1 - X2)*(X1 - X2) + (Y1 - Y2)*(Y1 - Y2))
-hypot = (A, B) -> math.sqrt((A*A) + (B*B))
-
-rrs = { -- Real Rocket Science
-    TWR: (Force, Mass, Acceleration) -> (Force / (Mass * Acceleration))
-    DV: (M0, M1, ISP, Acceleration) -> (2.718281828459*(M0 / M1) * ISP * Acceleration)
+MTLibrary = {
+    Logic: {
+        State: state
+    }
+    Math: {
+        Quadra: class Quadra
+            new: (X, Y, O, T) =>
+                @x = (tonumber(X) or 0)
+                @y = (tonumber(Y) or 0)
+                @o = (tonumber(O) or 0)
+                @t = (tonumber(T) or 0)
+                return @
+            __tostring: => return ("x=#{@x}, y=#{@y}, o=#{@o}, t=#{@t}")
+            __add: (left, right) ->
+                switch (type(left))
+                    when "number" do
+                        return Quadra(left+right.x, left+right.y,
+                            left+right.o, left+right.t)
+                    when "table" do
+                        if type(right) == "number" then
+                            return Quadra(left.x+right, left.y+right,
+                                left.o+right, left.t+right)
+                        if (left.__class != nil) then
+                            if (left.__name == right.__name) then
+                                return Quadra(left.x+right.x, left.y+right.y,
+                                    left.o+right.o, left.t+right.t)
+                error("Invalid addition! (#{type(left)} + #{type(right)})")
+            __sub: (left, right) ->
+                switch (type(left))
+                    when "number" do
+                        return Quadra(left-right.x, left-right.y,
+                            left-right.o, left-right.t)
+                    when "table" do
+                        if type(right) == "number" then
+                            return Quadra(left.x-right, left.y-right,
+                                left.o-right, left.t-right)
+                        if (left.__class != nil) then
+                            if (left.__name == right.__name) then
+                                return Quadra(left.x-right.x, left.y-right.y,
+                                    left.o-right.o, left.t-right.t)
+                error("Invalid subtraction! (#{type(left)} - #{type(right)})")
+            __mul: (left, right) ->
+                switch (type(left))
+                    when "number" do
+                        return Quadra(left*right.x, left*right.y,
+                            left*right.o, left*right.t)
+                    when "table" do
+                        if type(right) == "number" then
+                            return Quadra(left.x*right, left.y*right,
+                                left.o*right, left.t*right)
+                        if (left.__class != nil) then
+                            if (left.__name == right.__name) then
+                                return Quadra(left.x*right.x, left.y*right.y,
+                                    left.o*right.o, left.t*right.t)
+                error("Invalid multiplication! (#{type(left)} * #{type(right)})")
+            __div: (left, right) ->
+                switch (type(left))
+                    when "number" do
+                        return Quadra(left/right.x, left/right.y,
+                            left/right.o, left/right.t)
+                    when "table" do
+                        if type(right) == "number" then
+                            return Quadra(left.x/right, left.y/right,
+                                left.o/right, left.t/right)
+                        if (left.__class != nil) then
+                            if (left.__name == right.__name) then
+                                return Quadra(left.x/right.x, left.y/right.y,
+                                    left.o/right.o, left.t/right.t)
+                error("Invalid division! (#{type(left)} / #{type(right)})")
+            __unm: => return Quadra(-@x, -@y, -@o, -@t)
+        truncate: (value) ->
+            if (value == nil) then return nil
+            if (value >= 0) then return math.floor(value + 0.5)
+            else do return math.ceil(value - 0.5)
+    }
 }
 
-withinRegion = (Query, Region) ->
-    assert (Query.X and Query.Y) and (Region.X and Region.Y and Region.W and Region.H)
-    if (Query.X >= Region.X) and (Query.X <= (Region.X + Region.W))
-            return (Query.Y >= Region.Y) and (Query.Y <= (Region.Y + Region.H))
-    return false
+BinaryFormat = package.cpath\match("%p[\\|/]?%p(%a+)")
 
-class Element
-    Position: {X: 0, Y: 0}, Velocity: {X: 0, Y: 0, R: 0},
-    Rotation: 0, Scale: {X: 1, Y: 1}
-    update: (dT) =>
-        @Position.X += @Velocity.X * dT
-        @Position.Y += @Velocity.Y * dT
-        @Rotation += @Velocity.R * dT
-    new: =>
+if describe != nil then -- @Busted Test
+    describe("MTLibrary", ()->
+        it("has no nil-errors", ()->
+            assert.has_no.errors(()->
+                recurse=(target)->
+                    for _, member in pairs(target)
+                        if (type(member) == "function") then
+                            member(nil)
+                        elseif (type(member) == "table") then
+                            if (member.__class == nil) then
+                                recurse(member)
+                recurse(MTLibrary)
+            )
+        )
+        it("supports Quadra mathematics", ()->
+            assert.has_no.errors(()->
+                m1 = MTLibrary.Math.Quadra!
+                m1 += 256
+                -- m2 = m1 ^ 2 
+                m2 = -m1 / 256
+                print m1, m2
+            )
+        )
+        it("supports Stately mechanisms", ()->
+            assert.has_no.errors(()->
+                s1 = MTLibrary.Logic.State({'default'})
+                s1 += {
+                    foo:()->print("yeet")
+                    woo:(...)->print(...)
+                }
+                s1('foo')
+                s1('woo', 420, 'etc', 520)
+            )
+        )
+    )
+    print "MTLibrary(#{META_INFO})-#{BinaryFormat}-busted"
+    return true
 
-class Projector extends Element
-    focus: (TargetX, TargetY) =>
-        wW, wH = love.graphics.getDimensions!
-        @Position.X = (((@Scale.X * wW)*0.5) + TargetX)
-        @Position.Y = (((@Scale.Y * wH)*0.5) + TargetY)
-
-    push: =>
-        if love.graphics.isActive! == true
-            love.graphics.push!
-            love.graphics.rotate(@Rotation)
-            love.graphics.scale(@Scale.X, @Scale.Y)
-            love.graphics.translate(@Position.X, @Position.Y)
-    pop: =>
-        if love.graphics.isActive! == true
-            love.graphics.pop!
-    new: => super!
-
-
-class Slatt
-    Handlers: {}, Members: {}
-    addMember: (MemberIndex, MemberValue) => 
-        if (MemberValue != nil) then @Members[MemberIndex] = (MemberValue)
-    try: (HandleName, ...) =>
-        if localCall = @Handlers[HandleName] then localCall(@, ...)
-    new: (Source) =>
-        if (Source != nil)
-            newHandles = nil
-            if type(Source) == "string"
-                newHandles = require(Source)
-            elseif type(Source) == "table" then newHandles = Source
-            for NewHandleI, NewHandleV in pairs(newHandles)
-                @Handlers[NewHandleI] = NewHandleV
-
-serialize = (target, Seperator=", ") ->
-    if type(target) != "table"
-        target = {target or nil}
-    serial = '{'
-    for index,value in pairs target
-        serial ..= if (type(index) == "string") then "#{index}:" else "[#{tostring index}]:"
-        if type(value) == "table"
-            serial ..= "#{serialize(value, Seperator)}\n"
-        elseif type(value) == "function"
-            serial ..= "!#{Seperator}"
-        elseif type(value) == "number"
-            serial ..= "#{tostring value}#{Seperator}"
-        else
-            serial ..= "'#{tostring value}'#{Seperator}"
-    return (string.sub(serial, 1, -3) .. '}')
-
-{
-    meta: Metadata({"KLOE", 0, 3.3, 87})
-    logic: {
-        :Slatt
-    }
-    geometry: nil
-    graphics: {
-        :Projector, :Element,
-        --NewQuads: (QuadFile, )
-        Center: ->
-            w, h = love.graphics.getDimensions!
-            return (w*0.5), (h*0.5)
-        ScaleWindow: (Ratio=1) ->
-            mceil = math.ceil
+if love != nil then
+    -- @LOVE Section
+    -- export lSteam = require("luasteam")
+    -- export sfxrl = require("sfxr")
+    MTLibrary.Graphics={
+        fit: (monitorRatio=1) ->
             oldW, oldH, currentFlags = love.window.getMode!
             screen, window = {}, {}
             screen.w, screen.h = love.window.getDesktopDimensions(currentFlags.display)
-            newWindowWidth, newWindowHeight = mceil(screen.w / Ratio), mceil(screen.h / Ratio)
+            newWindowWidth = truncate(screen.w / monitorRatio)
+            newWindowHeight = truncate(screen.h / monitorRatio)
             if (oldW == newWindowWidth) and (oldH == newWindowHeight) then return nil, nil
-            window.display, window.w, window.h = currentFlags.display, newWindowWidth, newWindowHeight
-            window.x = mceil((screen.w*0.5) - (window.w*0.5))
-            window.y = mceil((screen.h*0.5) - (window.h*0.5))
+            window.display, window.w = currentFlags.display, newWindowWidth
+            window.h = newWindowHeight
+            window.x = truncate((screen.w*0.5) - (window.w*0.5))
+            window.y = truncate((screen.h*0.5) - (window.h*0.5))
             currentFlags.x, currentFlags.y = window.x, window.y
-            love.window.setMode window.w, window.h, currentFlags
+            love.window.setMode(window.w, window.h, currentFlags)
             return screen, window
-    }
-    strings: {
-        Serialize: serialize
-    }
-    math: {
-        Clamp: clamp,
-        Random: (Tbl) ->
-            if type(Tbl) == "table"
-                rndIndex = math.random(1, #Tbl)
-                for currIndex, currVal in ipairs(Tbl)
-                    if rndIndex == currIndex
-                        return currVal
-            elseif type(Tbl) == "number"
-                return math.random Tbl
-            elseif Tbl == nil
-                return math.random(-math.huge, math.huge)
-            return Tbl
-        RandomTable: (Indices, MinValue, MaxValue) ->
-            with rndmTbl = {}
-                for i = 1, Indices
-                    rndmTbl[i] = math.random(MinValue, MaxValue)
-                return rndmTbl
-        WithinRegion: withinRegion
-    }
-}
+        getCenter: (offset, offsetY) ->
+            w, h = lov[, ...]on.R += (@Velocity.R * dT)
+--         if (@Velocity.X != 0) or (@Velocity.Y != 0) then
+--             @move(@Velocity.X * dT, @Velocity.Y * dT)
+--     draw: =>
+--         if love.graphics.isActive! == false then return nil
+--         if @Drawable == nil then return nil else
+--             love.graphics.draw(@Drawable, @Position.X, @Position.Y,
+--                 @Position.R + @Offset.R, @Scale.X, @Scale.Y,
+--                 @Offset.X, @Offset.Y)
+--     move: (ByX, ByY) =>
+--         @Position.X, @Position.Y = (@Position.X + ByX), (@Position.Y + (ByY or ByX))
+--     setPosition: (NewX, NewY) => @Position.X, @Position.Y = NewX, NewY
+--     getPosition: => return (@Position.X), (@Position.Y)
+--     applyForce: (Force, AngleForce, Angle) =>
+--         if (Force == nil) and (AngleForce == nil) then return nil
+--         if (Angle == nil) then Angle = @Position.R else Angle += @Position.R
+--         @Velocity.R += (AngleForce or 0)
+--         @Velocity.X += (math.cos(Angle) * Force)
+--         @Velocity.Y += (math.sin(Angle) * Force)
+
+-- class ProceduralSound
+--     LSource: nil, SFXRSound: nil
+--     new: (Generator, Seed=math.random!, AutoPlay=false, Loop=false) =>
+--         @SFXRSound = sfxrl.newSound!
+--         if SFXRGenerator = (@SFXRSound[Generator] or false) then
+--             SFXRGenerator(@SFXRSound, Seed)
+--         elseif SFXRGenerator = (@SFXRSound["random"..Generator] or false) then
+--             SFXRGenerator(@SFXRSound, Seed)
+--         else @SFXRSound\loadBinary(Generator)
+--         @LSource = love.audio.newSource(@SFXRSound\generateSoundData!, "stream")
+--         @LSource\setLooping Loop
+--         if AutoPlay == true then @play!
+--     save: (FileName) => @SFXRSound\saveBinary(FileName or tostring(os.time!))
+--     play: => @LSource\play!
+--     pause: => @LSource\pause!
+
+-- class Picture extends Element
+--     new: (ImagePath, ...) =>
+--         @Drawable = love.graphics.newImage(ImagePath)
+--         super(...)
+
+-- class RenderTarget extends Picture
+--     new: (x, y, width, height) =>
+--         @PictureData = love.image.newImageData(width, height)
+--         super(@PictureData, x, y)
+--     interpret: (Mapper) =>
+--         if type(Mapper) == "function" then
+--             OldPicData = @PictureData
+--             NewPicData = OldPicData
+--             for xPos=1, oldLC\getWidth! do
+--                 for yPos=1, oldLC\getHeight! do
+--                     r, g, b, a = oldLC\getPixel(xPos, yPos)
+--                     newX, newY = Mapper(xPos, yPos)
+--                     NewPicData\setPixel(newX, newY, r, g, b, a)
+--             @PictureData\paste(NewPicData)
+--     noise: (amount=100, alpha=1) =>
+--         mapper = (x, y, r, g, b, a) ->
+--             mr = math.random
+--             return x, y, mr(0,1)*amount, mr(0,1)*amount, mr(0,1)*amount, mr(0,1)*alpha
+--         @interpret(mapper)
+
+-- class Label extends Element
+--     Alignment: 'center', Width: nil, Text: nil
+--     new: (TextStr, ...) =>
+--         @Text = TextStr
+--         @Width = (#TextStr) * 12
+--         super(...)
+--     draw: => love.graphics.printf(@Text, @Position.X, @Position.Y, @Width, @Alignment,
+--         @Position.R + @Offset.R, @Scale.X, @Scale.Y, @Offset.X, @Offset.Y)
+
+-- class Button extends Element
+-- class CheckBox extends Button
+-- class Projector extends Element
+--     push: =>
+--         love.graphics.push!
+--         love.graphics.rotate(@Position.R)
+--         love.graphics.scale(@Scale.X, @Scale.Y)
+--         love.graphics.translate(@Position.X, @Position.Y)
+--     pop: => love.graphics.pop!
+
+-- class GameState
+--     Handlers: {}, Members: {}
+--     setMember: (MemberIndex, MemberValue) =>
+--         if @Members[MemberIndex] == nil then
+--             @Members[MemberIndex] = MemberValue
+--     tryMember: (MemberIndex, MemberHandle, ...) =>
+--         if TargetMember = @Members[MemberIndex] then
+--             if TargetMHandle = TargetMember[MemberHandle] then
+--                 TargetMHandle(TargetMember, ...)
+--     tryHandle: (HandleName, ...) =>
+--         if HandlerCall = @Handlers[HandleName]
+--             HandlerCall(@, ...)
+--         if HandleName == "draw" then return
+--         for MemberIndex, MemberValue in pairs @Members
+--             if MemberCall = MemberValue[HandleName] then
+--                 MemberCall(MemberValue, ...)
+--     new: (Source) =>
+--         SourceData = require(Source)
+--         for HandleIndex, Handle in pairs(SourceData)
+--             @Handlers[HandleIndex] = Handle
+
+return (MTLibrary) or error("MTLibrary failure!")
