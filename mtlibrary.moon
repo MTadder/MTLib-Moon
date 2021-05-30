@@ -166,7 +166,17 @@ if love != nil then
             love.window.setMode(window.w, window.h, currentFlags)
             return screen, window
         getCenter: (offset, offsetY) ->
-            w, h = lov[, ...]on.R += (@Velocity.R * dT)
+            w, h = love.graphics.getDimensions!
+            return ((w - offset) * 0.5), ((h - (offsetY or offset)) * 0.5)
+    }
+    print "MTLibrary(#{META_INFO})-#{BinFormat}-LOVE"
+
+-- class Element
+--     Position: {X: 0, Y: 0, R: 0}, Velocity: {X: 0, Y: 0, R: 0},
+--     Scale: {X: 1, Y: 1}, Offset: {X: 0, Y: 0, R: 0}, Drawable: nil
+--     update: (dT) =>
+--         if (@Velocity.R != 0) then
+--             @Position.R += (@Velocity.R * dT)
 --         if (@Velocity.X != 0) or (@Velocity.Y != 0) then
 --             @move(@Velocity.X * dT, @Velocity.Y * dT)
 --     draw: =>
