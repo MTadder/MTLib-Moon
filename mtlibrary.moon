@@ -106,10 +106,11 @@ MTLibrary = {
     }
 }
 
-BinaryFormat = package.cpath\match("%p[\\|/]?%p(%a+)")
+BinaryFormat = (package.cpath\match("%p[\\|/]?%p(%a+)") or 'lua')
 
 if describe != nil then -- @Busted Test
-    describe("MTLibrary", ()->
+    print('\n'.."MTLibrary(#{META_INFO})-#{BinaryFormat}-bust")
+    return describe("MTLibrary", ()->
         it("has no nil-errors", ()->
             assert.has_no.errors(()->
                 recurse=(target)->
@@ -128,7 +129,7 @@ if describe != nil then -- @Busted Test
                 m1 += 256
                 -- m2 = m1 ^ 2 
                 m2 = -m1 / 256
-                print m1, m2
+                --print m1, m2
             )
         )
         it("supports Stately mechanisms", ()->
@@ -138,13 +139,11 @@ if describe != nil then -- @Busted Test
                     foo:()->print("yeet")
                     woo:(...)->print(...)
                 }
-                s1('foo')
-                s1('woo', 420, 'etc', 520)
+                --s1('foo')
+                --s1('woo', 420, 'etc', 520)
             )
         )
     )
-    print "MTLibrary(#{META_INFO})-#{BinaryFormat}-busted"
-    return true
 
 if love != nil then
     -- @LOVE Section
@@ -170,6 +169,8 @@ if love != nil then
             return ((w - offset) * 0.5), ((h - (offsetY or offset)) * 0.5)
     }
     print "MTLibrary(#{META_INFO})-#{BinFormat}-LOVE"
+else do
+    print "MTLibrary(#{META_INFO})"
 
 -- class Element
 --     Position: {X: 0, Y: 0, R: 0}, Velocity: {X: 0, Y: 0, R: 0},

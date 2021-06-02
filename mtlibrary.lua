@@ -196,9 +196,10 @@ local MTLibrary = {
     end
   }
 }
-local BinaryFormat = package.cpath:match("%p[\\|/]?%p(%a+)")
+local BinaryFormat = (package.cpath:match("%p[\\|/]?%p(%a+)") or 'lua')
 if describe ~= nil then
-  describe("MTLibrary", function()
+  print('\n' .. "MTLibrary(" .. tostring(META_INFO) .. ")-" .. tostring(BinaryFormat) .. "-bust")
+  return describe("MTLibrary", function()
     it("has no nil-errors", function()
       return assert.has_no.errors(function()
         local recurse
@@ -221,7 +222,6 @@ if describe ~= nil then
         local m1 = MTLibrary.Math.Quadra()
         m1 = m1 + 256
         local m2 = -m1 / 256
-        return print(m1, m2)
       end)
     end)
     return it("supports Stately mechanisms", function()
@@ -237,13 +237,9 @@ if describe ~= nil then
             return print(...)
           end
         }
-        s1('foo')
-        return s1('woo', 420, 'etc', 520)
       end)
     end)
   end)
-  print("MTLibrary(" .. tostring(META_INFO) .. ")-" .. tostring(BinaryFormat) .. "-busted")
-  return true
 end
 if love ~= nil then
   MTLibrary.Graphics = {
@@ -273,5 +269,9 @@ if love ~= nil then
     end
   }
   print("MTLibrary(" .. tostring(META_INFO) .. ")-" .. tostring(BinFormat) .. "-LOVE")
+else
+  do
+    print("MTLibrary(" .. tostring(META_INFO) .. ")")
+  end
 end
 return (MTLibrary) or error("MTLibrary failure!")
