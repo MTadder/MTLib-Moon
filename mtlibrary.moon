@@ -106,10 +106,8 @@ MTLibrary = {
     }
 }
 
-BinaryFormat = (package.cpath\match("%p[\\|/]?%p(%a+)") or 'lua')
-
 if describe != nil then -- @Busted Test
-    print('\n'.."MTLibrary(#{META_INFO})-#{BinaryFormat}-bust")
+    print('\n'.."MTLibrary(#{META_INFO})-bust")
     return describe("MTLibrary", ()->
         it("has no nil-errors", ()->
             assert.has_no.errors(()->
@@ -168,7 +166,7 @@ if love != nil then
             w, h = love.graphics.getDimensions!
             return ((w - offset) * 0.5), ((h - (offsetY or offset)) * 0.5)
     }
-    print "MTLibrary(#{META_INFO})-#{BinFormat}-LOVE"
+    print "MTLibrary(#{META_INFO})-LOVE"
 else do
     print "MTLibrary(#{META_INFO})"
 
