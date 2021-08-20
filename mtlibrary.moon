@@ -1,8 +1,16 @@
---  @MTLibrary by @MTadder
+--  MTLibrary
+--  
+--     @Container: a multipurpose & effective object container
+--     @Quadra: a 4-number object with position and velocity
+--     @
+--
+--  by MTadder
 
-class State
-    _include: (Stack)=>
-        for i,k in pairs(Stack) do @members[i] = k
+
+class Container
+    members: {}
+    _include: (tbl)=>
+        for i,k in pairs(tbl) do @members[i] = k
         return @
     __add: (Left, Right)->
         if type(Right) == type(Left) then
@@ -15,13 +23,15 @@ class State
             return tgt
         elseif (Member == nil) then return @members
         return nil
-    new: (Source)=>
-        @members = {}
-        if (Source == nil) then return @
-        else switch type(Source)
-            when 'table' do return (@ + Source)
-            when 'string' do return (@ + require(Source))
+    forEach: (DoFunc)=> for i,k in pairs(@members) do DoFunc(k)
 
+    new: (Members)=>
+        if Members == nil then
+            return @
+        else switch type(Members)
+            when 'table' do return (@ + Members)
+            when 'string' do return (@ + require(Members))
+            
 -- class Brain
 --     layers: {},
 --     Cell: class Cell
@@ -121,7 +131,7 @@ class Combinator
 
 MTLibrary = {
     string:{ :Serialize, :Combinator }
-    logic:{ :State }
+    logic:{ :Container }
     math:{ 
         :Quadra, :Shape, :Point, :Circle, :Rectangle, :Polygon,
         truncate: (value)->
