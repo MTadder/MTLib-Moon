@@ -1,150 +1,194 @@
---  MTLibrary
---  
---     @Container: a multipurpose & effective object container
---     @Quadra: a 4-number object with position and velocity
---     @
---
---  by MTadder
+-- MTLibrary 0.4.30.21 (major.minor.dd.yy)
 
+-- by MTadder
 
+-- @logic
 class Container
     members: {}
-    _include: (tbl)=>
-        for i,k in pairs(tbl) do @members[i] = k
+    _include: (newMembers)=>
+        for i,k in pairs(newMembers) do @members[i] = k
         return @
-    __add: (Left, Right)->
-        if type(Right) == type(Left) then
-            map = (if (Left.__class == Right.__class) then Right.members else Right)
-            return Left\_include(map)
-    __call: (Member, ...)=>
-        if tgt = @members[Member] then
-            if type(tgt) == 'function' then
-                return tgt(...)
-            return tgt
-        elseif (Member == nil) then return @members
+    __add: (left, right)->
+        if (type(right) == type(left)) then
+            map = (if left.__class == right.__class then right.members else right)
+            return left\_include(map)
+    __call: (target, ...)=>
+        if member = @members[target] then
+            if (type(member) == 'function') then
+                return member(...)
+            return member
+        elseif (member == nil) then return @members
         return nil
-    forEach: (DoFunc)=> for i,k in pairs(@members) do DoFunc(k)
+    forEach: (doFunction)=> for i,k in pairs(@members) do doFunction(k, i)
+    new: (members)=>
+        if members == nil then return @
+        else switch type(members)
+            when 'table' do return (@ + members)
+            when 'string' do return (@ + require(members))
 
-    new: (Members)=>
-        if Members == nil then
-            return @
-        else switch type(Members)
-            when 'table' do return (@ + Members)
-            when 'string' do return (@ + require(Members))
-            
--- class Brain
---     layers: {},
---     Cell: class Cell
---         excitement: 0, bias: 0, weights: {},
---         new: (Inputs, Bias=math.random!)=>
---             for i=1, Inputs do @weights[i] = (math.random! * 0.1)
---             @bias = Bias
---         activate: (Input, Threshold)=>
---             signal = @bias
---             for i=1, #@weights do signal += (@weights[i] * Input[i])
---             @excitement = 1 / (1 + math.exp((signal * -1) / Threshold))
---             return @excitement
---     createLayer: (Cells=1, Inputs=1)=>
---         layer = {}
---         for i=1, Cells do layer[i] = Cell(Inputs)
---         table.insert(@layers, layer)
---     new: (LayerCells, LearningRate, Threshold)=>
---         @createLayer(LayerCells[1], LayerCells[1])
---         for i=2, #LayerCells do @createLayer(LayerCells[1], LayerCells[i-1])
---         return @
-
-class Quadra
+-- @math
+sigmoid = (x)-> (1 / (1 + math.exp(-x)))
+class Dyad
     position: {x: nil, y: nil},
+    lerp: (t)=> (@position.x + (@position.y - @position.x) * t)
+    set: (p1, p2)=>
+        @position.x = tonumber(p1 or 0)
+        @position.y = tonumber(p2 or 0)
+    new: (p1, p2)=>
+        @set(p1, p2)
+class Tetrad extends Dyad
     velocity: {x: nil, y: nil},
-    set: (Px, Py, Vx, Vy)=>
-        @position.x = tonumber(Px or 0)
-        @position.y = tonumber(Py or 0)
-        @velocity.x = tonumber(Vx or 0)
-        @velocity.y = tonumber(Vy or 0)
-    step: (DeltaTime)=>
-        if DeltaTime == nil then DeltaTime = love.timer.getDelta!
-        if @velocity.x != 0 then @position.x += (@velocity.x * DeltaTime)
-        if @velocity.y != 0 then @position.y += (@velocity.y * DeltaTime)
-    impulse: (Angle, Force)=>
-        @velocity.x += (math.cos(Angle) * Force)
-        @velocity.y += (math.sin(Angle) * Force)
-    new: (Px, Py, Vx, Vy)=> @set(Px, Py, Vx, Vy)
-    
+    set: (p1, p2, v1, v2)=>
+        @position.x = tonumber(p1 or @position.x or 0)
+        @position.y = tonumber(p2 or @position.y or 0)
+        @velocity.x = tonumber(v1 or @velocity.x or 0)
+        @velocity.y = tonumber(v2 or @velocity.y or 0)
+    update: (deltaTime)=>
+        if deltaTime == nil then deltaTime = love.timer.getDelta!
+        if @velocity.x != 0 then @position.x += (@velocity.x * deltaTime)
+        if @velocity.y != 0 then @position.y += (@velocity.y * deltaTime)
+    impulse: (angle, force)=>
+        @velocity.x += (math.cos(angle) * force)
+        @velocity.y += (math.sin(angle) * force)
+    new: (p1, p2, v1, v2)=>
+        @set(p1, p2, v1, v2)
+class Hexad extends Tetrad
+    rotator: {value: 0, velocity: 0},
+    torque: (by)=> @rotator.velocity += tonumber(by)
+    update: (deltaTime)=>
+        @rotator.value += (@rotator.velocity * deltatime)
+        super\update(deltaTime)
+class Octad extends Hexad
+    dimensional: {position: 0, velocity: 0},
+    slant: (by)=> @dimensional.velocity += tonumber(by)
+    update: (deltaTime)=>
+        @dimensional.position += (@dimensional.velocity * deltaTime)
+        super\update(deltaTime)
+truncate = (value)->
+    if (value == nil) then return nil
+    if (value >= 0) then return math.floor(value + 0.5)
+    else do return math.ceil(value - 0.5)
 class Shape
-    translation: { scale: 1, rotation: 0, position: Quadra! }
+    translation: Tetrad!
+    distance: (toShape)=>
+        return math.sqrt((@translation.position.x - toShape.position.x)^2 +
+            (@translation.position.y - toShape.position.y)^2)
+    draw: => nil
 class Circle extends Shape
-    new: (X, Y, Radius=1)=>
-        @radius = tonumber(Radius)
-        @position\set(X, Y)
+    new: (x, y, radius=1, mode='line')=>
+        @radius = tonumber(radius)
+        @mode = tostring(mode)
+        @position\set(x, y)
+    draw: =>
+        love.graphics.circle(@mode, @position.x, @position.y, @radius)
+class Line extends Shape
+    endPoint: Dyad!
+    new: (oX, oY, eX, eY)=>
+        @position.set()
 class Rectangle extends Shape
     new: (X, Y, Width, Height)=>
         @dimensions = { width: Width, height: Height }
         @position\set(X, Y)
 class Polygon extends Shape
     points: {}
+class Matrix
+    __add: (Left, Right)->
+    __sub: (Left, Right)->
+    __div: (Left, Right)->
+    __mul: (Left, Right)->
+    __tostring: =>
+    fill: ()=>
+    dot: (VectorOrMatrix)=>
+        sum = 0
+        return sum
+    sum: =>
+        sum = 0
+        for k, v in pairs(@) do 
+            for i, j in pairs(v) do
+                sum += j
+        return sum
+    maximum: =>
+        found = -math.huge
+        for k, v in pairs(@) do
+            for i, j in pairs(v) do
+                if j > found then found = j
+        return found
+    minimum: =>
+        found = math.huge
+        for k, v in pairs(@) do
+            for i, j in pairs(v) do
+                if j < found then found = j
+        return found
+    new: (arrays)=>
+        if type(TblOrDimensions) == 'table' then
+            for k, v in ipairs(TblOrDimensions) do
+                table.insert(@, k, v)
+        elseif type(TblOrDimensions) == 'number' then
+            with Dimensions = TblOrDimensions do
+                FillWith = (Lengths or 0)
+                for i=1, Dimensions do
+                    @[i] = {}
+                    if type(FillWith) == 'number' then
+                        for j=1, Dimensions do @[i][j] = FillWith
+                    elseif type(FillWith) == 'table' then
+                        for j, k in pairs(FillWith) do @[i][j] = k
 
-if love then
-    class View
-    class List extends View
-    class Grid extends List
-    class Element
-    class Label extends Element
-        --  draw: => love.graphics.printf(@Text, @Position.X, @Position.Y, @Width, @Alignment,
-        --      @Position.R + @Offset.R, @Scale.X, @Scale.Y, @Offset.X, @Offset.Y)
-    class Button extends Element
-    class Textbox extends Element
-    class Picture extends Element
-        --  new: (ImagePath, ...) =>
-        --      @Drawable = love.graphics.newImage(ImagePath)
-
-Serialize = (Object)->
+-- @string
+serialize = (Object, Indentation=1)->
     serial = ''
     switch type(Object)
         when "table" do
-            serial ..= '{'
-            for k,v in pairs(Object) do
-                serial ..= "#{k}: #{Serialize(v)}, "
-            if (serial\sub(-1) != '{') then serial = serial\sub(0, -3)
-            serial ..= '}'
-        when "function" do serial ..= "(#{tostring(Object)\gsub('function: ', '')})"
-        when "thread" do serial ..= "[#{tostring(Object)\gsub('thread: ', '')}]"
-        when "string" do serial ..= "'#{Object}'"
-        else do serial ..= tostring(Object)
+            serial ..= '{\n'
+            serial ..= string.rep(' ', Indentation)
+            for k, v in pairs(Object) do
+                serial ..= "[#{k}]=#{serialize(v, Indentation+1)}, "
+            serial ..= '\n'..string.rep(' ', Indentation-1)..'}'
+        when 'number' do serial ..= string.format('%d', Object)
+        when 'string' do serial ..= string.format('%q', Object)
+        else do serial ..= "(#{tostring(Object)})"
     return serial
+split = (str, delimiter)->
+    assert(type(str)=='string')
+    with res = {}
+        regex = ("([^%s]+)")\format(delimiter)
+        for m in str\gmatch(regex) do
+            table.insert(res, m)
+        return res
 
-class Combinator
-    new: (combos)=>
-        @banks = {}
-        for k,v in pairs(combos) do
-            if type(v) == 'string' then
-                if rtn = dofile(v) then
-                    if type(rtn) == 'table' then
-                        @banks[k] = rtn
-                else error("Combinator: lua file does not return a table: #{v}")
-            elseif type(v) == 'table' then
-                @banks[k] = v
-    __tostring:=>
-        combo = ''
-        for k,bank in pairs(@banks) do
-            combo ..= (bank[math.random(#bank)]..' ')
-        return combo\sub(0, -2)
+-- @graphics
+class View
+class List extends View
+class Grid extends List
+class Element
+class Label extends Element
+class Button extends Element
+class Textbox extends Element
+class Picture extends Element
+class Atlas extends Picture
 
+-- @module
 MTLibrary = {
-    string:{ :Serialize, :Combinator }
-    logic:{ :Container }
-    math:{ 
-        :Quadra, :Shape, :Point, :Circle, :Rectangle, :Polygon,
-        truncate: (value)->
-            if (value == nil) then return nil
-            if (value >= 0) then return math.floor(value + 0.5)
-            else do return math.ceil(value - 0.5)
+    logic: {
+        :Container
+    }
+    math: { 
+        :Shape, shapes: {
+            :Circle, :Line, :Rectangle, :Polygon
+        }
+        :Dyad, :Tetrad, :Hexad, :Octad,
+        :Vector, :Matrix
+        :truncate,
+    }
+    string: {
+        :serialize, :split
     }
 }
 
+-- @love @module
 if love then
     MTLibrary.graphics = {
-        :View, :List, :Element, :Label,
-        :Button, :Textbox, :Checkbox,
+        :View, :List, :Grid, :Element, :Label,
+        :Button, :Textbox, :Picture, :Atlas
         fit: (monitorRatio=1)->
             oldW, oldH, currentFlags = love.window.getMode!
             screen, window = {}, {}
