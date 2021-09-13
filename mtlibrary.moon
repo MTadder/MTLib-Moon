@@ -1,30 +1,36 @@
--- MTLibrary 0.4.30.21 (major.minor.dd.yy)
-
+-- MTLibrary 0.5.9.21 (major.minor.dd.yy)
 -- by MTadder
 
 -- @logic
 class Container
     members: {}
-    _include: (newMembers)=>
-        for i,k in pairs(newMembers) do @members[i] = k
+    top: => return @members[#@members]
+    pop: =>
+        if got = @top! then @members[#@members] = nil 
+        return (got or nil)
+    push: (newMembers)=>
+        if (type(newMembers) == 'table')
+            for i,k in pairs(newMembers) do @members[i] = k
+        else do table.insert(@members, newMembers)
         return @
     __add: (left, right)->
         if (type(right) == type(left)) then
             map = (if left.__class == right.__class then right.members else right)
-            return left\_include(map)
+            return left\push(map)
     __call: (target, ...)=>
         if member = @members[target] then
             if (type(member) == 'function') then
                 return member(...)
             return member
-        elseif (member == nil) then return @members
-        return nil
-    forEach: (doFunction)=> for i,k in pairs(@members) do doFunction(k, i)
+        else return nil
+    forEach: (action)=>
+        results = {}
+        for k,v in pairs(@members) do
+            table.insert(results, k, action(v, k))
+        return results
     new: (members)=>
-        if members == nil then return @
-        else switch type(members)
-            when 'table' do return (@ + members)
-            when 'string' do return (@ + require(members))
+        if (members != nil) then return (@ + members)
+        return @
 
 -- @math
 sigmoid = (x)-> (1 / (1 + math.exp(-x)))
@@ -184,7 +190,7 @@ MTLibrary = {
     }
 }
 
--- @love @module
+-- @love
 if love then
     MTLibrary.graphics = {
         :View, :List, :Grid, :Element, :Label,
