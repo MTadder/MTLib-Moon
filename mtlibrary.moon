@@ -1,5 +1,4 @@
--- MTLibrary 0.5.9.21 (major.minor.dd.yy)
--- by MTadder
+-- MTLibrary 0.5.14.21 (major.minor.dd.yy)
 
 -- @logic
 class Container
@@ -8,29 +7,25 @@ class Container
     pop: =>
         if got = @top! then @members[#@members] = nil 
         return (got or nil)
-    push: (newMembers)=>
-        if (type(newMembers) == 'table')
-            for i,k in pairs(newMembers) do @members[i] = k
-        else do table.insert(@members, newMembers)
+    push: (member)=>
+        if (type(member) == 'table')
+            for i, k in pairs(member) do @members[i] = k
+        else @members[(#@members)+1] = member
         return @
-    __add: (left, right)->
-        if (type(right) == type(left)) then
-            map = (if left.__class == right.__class then right.members else right)
-            return left\push(map)
+    __add: (member)=> return @push(member)
     __call: (target, ...)=>
         if member = @members[target] then
             if (type(member) == 'function') then
                 return member(...)
             return member
-        else return nil
+        return nil
+    new: (intial)=>
+        return (@ + (intial or nil))
     forEach: (action)=>
         results = {}
         for k,v in pairs(@members) do
             table.insert(results, k, action(v, k))
         return results
-    new: (members)=>
-        if (members != nil) then return (@ + members)
-        return @
 
 -- @math
 sigmoid = (x)-> (1 / (1 + math.exp(-x)))
