@@ -4,8 +4,8 @@ meta = {
     version: {
         major: 0
         minor: 6
-        revision: 3
-        __tostring: => return ("#{major}.#{minor}.#{revision}")
+        revision: 6
+        str:-> return ("#{major}.#{minor}.#{revision}")
     }
     date: 'Nov. 6th, 2021'
 }
@@ -28,35 +28,38 @@ class Timer
         if (@Remainder <= 0) then
             if (@Looping == true) then
                 @restart!
-                return false, @On_Completion!
-            return true, @On_Completion!
+            return (@Looping == false), @On_Completion!
         else return false, nil
 
 class Container
     items: {}
-    top: => return (@items[#@items] or nil)
+    count: ()=> return ((#@items) or 0)
+    top: => return (@items[@count!] or nil)
     pop: =>
-        if got = @top! then @items[#@items] = nil 
+        if got = @top! then @items[@count!] = nil
         return (got or nil)
     insert: (item, atKey)=>
+        if (item == nil) then return (false)
+        oldCount = @count!
         if (type(item) == 'table') then
-            @items[atKey] = {i,k for i,k in pairs(item)}
+            if (atKey == nil) then
+                for k,v in pairs(item) do @insert(v, k)
+            else do @insert(item, @count!+1)
         else do @items[atKey] = item
-        return (@)
-    __add: (item)=> return @push(item)
+        return (oldCount < @count!)
     __call: (target, ...)=>
-        if item = @items[target] then
-            if (type(item) == 'function') then
-                return item(...)
-            else return (item or nil)
-        return (nil)
+        if (target == nil) then target = @count!+1
+        item = (@items[target] or nil)
+        if (type(item) == 'function') then
+            return (item(... or nil) or nil)
+        return (item or nil)
     new: (initial)=>
-        if (initial != nil) then return (@ + intial)
-        else return (@)
-    forEach: (action)=> return {key,action(val, key) for key,val in pairs(@items)}
+        @insert(initial)
+        return (@)
+    forEach: (action)=> {key,action(val, key) for key,val in pairs(@items)}
 
 -- @math
-sigmoid = (x)-> (1 / (1 + math.exp(-x)))
+sigmoid = (x)-> (1/(1+math.exp(-x)))
 class Dyad
     position: {x: nil, y: nil},
     lerp: (t)=> (@position.x + (@position.y - @position.x) * t)
@@ -132,14 +135,14 @@ class Matrix
         return sum
     sum: =>
         sum = 0
-        for k, v in pairs(@) do 
-            for i, j in pairs(v) do
+        for k,v in pairs(@) do 
+            for i,j in pairs(v) do
                 sum += j
         return sum
     maximum: =>
         found = -math.huge
-        for k, v in pairs(@) do
-            for i, j in pairs(v) do
+        for k,v in pairs(@) do
+            for i,j in pairs(v) do
                 if j > found then found = j
         return found
     minimum: =>
@@ -150,7 +153,7 @@ class Matrix
         return found
     new: (arrays)=>
         if type(TblOrDimensions) == 'table' then
-            for k, v in ipairs(TblOrDimensions) do
+            for k,v in ipairs(TblOrDimensions) do
                 table.insert(@, k, v)
         elseif type(TblOrDimensions) == 'number' then
             with Dimensions = TblOrDimensions do
@@ -160,7 +163,7 @@ class Matrix
                     if type(FillWith) == 'number' then
                         for j=1, Dimensions do @[i][j] = FillWith
                     elseif type(FillWith) == 'table' then
-                        for j, k in pairs(FillWith) do @[i][j] = k
+                        for j,k in pairs(FillWith) do @[i][j] = k
 
 -- @string
 serialize = (Object, Indentation=1)->
@@ -169,7 +172,7 @@ serialize = (Object, Indentation=1)->
         when "table" do
             serial ..= '{\n'
             serial ..= string.rep(' ', Indentation)
-            for k, v in pairs(Object) do
+            for k,v in pairs(Object) do
                 serial ..= "[#{k}]=#{serialize(v, Indentation+1)}, "
             serial ..= '\n'..string.rep(' ', Indentation-1)..'}'
         when 'number' do serial ..= string.format('%d', Object)
@@ -196,6 +199,7 @@ class Picture extends Element
 
 -- @module
 MTLibrary = {
+    :meta, 
     logic: {
         :Container, :Timer,
     },
