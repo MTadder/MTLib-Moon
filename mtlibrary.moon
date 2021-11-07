@@ -154,7 +154,7 @@ truncate = (value)->
     math.ceil(value-0.5)
 class Shape
     teleport: (o, o2)=> @Origin.set(o, o2)
-    new: ()=> @Origin or= Tetrad!
+    new: ()=> @Origin or= Octad!
 class Circle extends Shape
     new: (x, y, radius)=>
         @teleport(x, y)
@@ -175,7 +175,8 @@ class Line extends Shape
             return ((0 < lam and lam < 1) and (0 < gam and gam < 1))
         else if (o.Origin != nil and o.Limits != nil) then
             for i,line in ipairs(o\getLines!) do
-
+                if (@intersects(line)) then return (true)
+            return (false)
         (nil)
     new: (oX, oY, eX, eY)=>
         @teleport(oX, oY)
@@ -184,14 +185,23 @@ class Rectangle extends Shape
     area: => (@Limits.Position.x*@Limits.Position.y)
     diagonal: => math.sqrt(math.pow(@Limits.Position.x, 2), math.pow(@Limits.Position.y, 2))
     perimeter: => (2*(@Limits.Position.x+@Limits.Position.y))
+    contains: (o)=> -- simplify for Dyads
+        -- if (o.Position != nil) then
+
+        -- else do
+        --     oOX, oOY = o.Origin\get!
+        --     oEX, oEY = o.Ending\get!
+        --     sOX, sOY = @Origin\get!
+        --     sLX, sLY = @Limits\get!
+        --     return ((oOX >= sOX and oOY <= sOY) and (oEX <= sLX and oEY <))
+        (nil)
     getLines: =>
-        lines = {
+        return {
             [1]: Line(@Origin.get!, @Limits.Position.get!),
             [2]: Line(@Limits.Position.x, @Origin.Position.y, @Limits.get!),
             [3]: Line(@Limits.get!, @Origin.Position.x, @Limits.Position.y),
             [4]: Line(@Limits.Position.x, @Limits.Position.y, @Origin.get!),
         }
-        return lines
     new: (x, y, w, h)=>
         @teleport(x, y)
         @Limits or= Dyad(w, h)
