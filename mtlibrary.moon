@@ -11,12 +11,18 @@ meta = {
 }
 
 -- @logic
+class Exception
+    Message: "", CallsError: false,
+    new: (message, callsError=false)=> @Message, @CallsError = message, callsError
+    __call:=> if (@CallsError) then error(@message)
+
 class Timer
     Duration: 0,
     Remainder: 0,
     Looping: false,
     On_Completion: ()->nil
-    new: (duration, on_complete, looping=false)=>
+    On_Update: (time_left)->nil
+    new: (duration, on_complete, on_update, looping=false)=>
         @Duration, @Looping, @On_Completion = duration, looping, on_complete
         @restart!
     restart: ()=> @Remainder = @Duration
@@ -32,31 +38,40 @@ class Timer
         else return false, nil
 
 class Container
-    items: {}
-    count: ()=> return ((#@items) or 0)
-    top: => return (@items[@count!] or nil)
+    Items: {}
+    Keys: {}
+    get: (key)=>
+        for k,k2 in ipairs(@Keys) do if (k2 == key) then return (@Items[k])
+    getKey: (item)=>
+        for k,i in ipairs(@Items) do
+            if (i == item) then
+                for k2,k3 in ipairs(@Keys) do
+                    if (k2 == k) then return (k3)
+        return nil
+    count: ()=> return ((#@Items) or 0)
+    top: => return (@Items[@count!])
     pop: =>
-        if got = @top! then @items[@count!] = nil
-        return (got or nil)
-    insert: (item, atKey)=>
-        if (item == nil) then return (false)
-        oldCount = @count!
-        if (type(item) == 'table') then
-            if (atKey == nil) then
-                for k,v in pairs(item) do @insert(v, k)
-            else do @insert(item, @count!+1)
-        else do @items[atKey] = item
-        return (oldCount < @count!)
-    __call: (target, ...)=>
-        if (target == nil) then target = @count!+1
-        item = (@items[target] or nil)
-        if (type(item) == 'function') then
-            return (item(... or nil) or nil)
+        if item = @top! then @Items[@count!] = nil
         return (item or nil)
+    insert: (item, key)=>
+        if (type(item) == 'table') then
+            for k,v in pairs(item) do @insert(v, k)
+        else do @Items[#@Items+1], @Keys[#@Keys+1] = item, (key or @count!+1)
+    __call: (item, key)=>
+        @insert(item, key)
+        return (@)
     new: (initial)=>
         @insert(initial)
         return (@)
-    forEach: (action)=> {key,action(val, key) for key,val in pairs(@items)}
+    iterator: ()=>
+        i, keys, items = 0, @Keys, @Items
+        return ()->
+            i += 1
+            item = items[i]
+            if (item == nil) then item = items[keys[i]]
+            if (item != nil) then return keys[i], item
+            (nil)
+    forEach: (action)=> {key,action(key, val) for key,val in @iterator!}
 
 -- @math
 sigmoid = (x)-> (1/(1+math.exp(-x)))
@@ -143,38 +158,39 @@ class Matrix
         found = -math.huge
         for k,v in pairs(@) do
             for i,j in pairs(v) do
-                if j > found then found = j
+                if (j > found) then found = j
         return found
     minimum: =>
         found = math.huge
         for k, v in pairs(@) do
             for i, j in pairs(v) do
-                if j < found then found = j
+                if (j < found) then found = j
         return found
     new: (arrays)=>
-        if type(TblOrDimensions) == 'table' then
+        if (type(TblOrDimensions) == 'table') then
             for k,v in ipairs(TblOrDimensions) do
                 table.insert(@, k, v)
-        elseif type(TblOrDimensions) == 'number' then
+        elseif (type(TblOrDimensions) == 'number') then
             with Dimensions = TblOrDimensions do
                 FillWith = (Lengths or 0)
                 for i=1, Dimensions do
                     @[i] = {}
-                    if type(FillWith) == 'number' then
+                    if (type(FillWith) == 'number') then
                         for j=1, Dimensions do @[i][j] = FillWith
-                    elseif type(FillWith) == 'table' then
+                    elseif (type(FillWith) == 'table') then
                         for j,k in pairs(FillWith) do @[i][j] = k
 
 -- @string
-serialize = (Object, Indentation=1)->
+serialize = (Object, ShowIndices=false, Indentation=1)->
     serial = ''
     switch type(Object)
-        when "table" do
-            serial ..= '{\n'
+        when 'table' do
+            serial ..= "{\n"
             serial ..= string.rep(' ', Indentation)
             for k,v in pairs(Object) do
-                serial ..= "[#{k}]=#{serialize(v, Indentation+1)}, "
-            serial ..= '\n'..string.rep(' ', Indentation-1)..'}'
+                if (ShowIndices) then serial ..= "[#{k}]="
+                serial ..= "#{serialize(v, ShowIndices, Indentation+1)}, "
+            serial ..= "\n#{string.rep(' ', Indentation-1)}}"
         when 'number' do serial ..= string.format('%d', Object)
         when 'string' do serial ..= string.format('%q', Object)
         else do serial ..= "(#{tostring(Object)})"
@@ -186,16 +202,6 @@ split = (str, delimiter)->
         for m in str\gmatch(regex) do
             table.insert(res, m)
         return (res)
-
--- @graphics
-class View
-class List extends View
-class Grid extends List
-class Element
-class Label extends Element
-class Button extends Element
-class Textbox extends Element
-class Picture extends Element
 
 -- @module
 MTLibrary = {
@@ -347,6 +353,22 @@ MTLibrary = {
 
 -- @love
 if love then
+    -- @graphics
+    class Camera
+        scale: { x: 0, y: 0 }
+        state: false
+        new: ()=>
+        setup: ()=>
+        render: ()=>
+    class View
+    class List extends View
+    class Grid extends List
+    class Element
+    class Label extends Element
+    class Button extends Element
+    class Textbox extends Element
+    class Picture extends Element
+
     MTLibrary.graphics = {
         :View, :List, :Grid, :Element, :Label,
         :Button, :Textbox, :Picture, :Atlas
