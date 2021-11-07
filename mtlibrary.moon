@@ -40,32 +40,31 @@ class Timer
 class Container
     Items: {}
     Keys: {}
-    get: (key)=>
-        for k,k2 in ipairs(@Keys) do if (k2 == key) then return (@Items[k])
+    get: (key)=> for k,k2 in ipairs(@Keys) do if (k2 == key) then return (@Items[k])
     getKey: (item)=>
         for k,i in ipairs(@Items) do
             if (i == item) then
                 for k2,k3 in ipairs(@Keys) do
                     if (k2 == k) then return (k3)
-        return nil
-    count: ()=> return ((#@Items) or 0)
-    top: => return (@Items[@count!])
+        (nil)
+    count: ()=> ((#@Items) or 0)
+    top: => (@Items[@count!])
     pop: =>
         if item = @top! then @Items[@count!] = nil
-        return (item or nil)
+        (item or nil)
     insert: (item, key)=>
         if (type(item) == 'table') then
             for k,v in pairs(item) do @insert(v, k)
         else do @Items[#@Items+1], @Keys[#@Keys+1] = item, (key or @count!+1)
     __call: (item, key)=>
         @insert(item, key)
-        return (@)
+        (@)
     new: (initial)=>
         @insert(initial)
-        return (@)
+        (@)
     iterator: ()=>
         i, keys, items = 0, @Keys, @Items
-        return ()->
+        ()->
             i += 1
             item = items[i]
             if (item == nil) then item = items[keys[i]]
@@ -74,68 +73,87 @@ class Container
     forEach: (action)=> {key,action(key, val) for key,val in @iterator!}
 
 -- @math
-sigmoid = (x)-> (1/(1+math.exp(-x)))
+_sigmoid = (x)-> (1/(1+math.exp(-x)))
+_lerp = (a,b,t)-> (a+(b-a)*t)
 class Dyad
-    position: {x: nil, y: nil},
-    lerp: (t)=> (@position.x + (@position.y - @position.x) * t)
+    lerp: (o, t)=>
+        if (o.Position != nil) then
+            @Position.x = _lerp(@Position.x, o.Position.x, tonumber(t))
+            @Position.y = _lerp(@Position.y, o.Position.y, tonumber(t))
+        (@)
     set: (p1, p2)=>
-        @position.x = tonumber(p1 or 0)
-        @position.y = tonumber(p2 or 0)
-    new: (p1, p2)=>
-        @set(p1, p2)
+        @Position or= {}
+        @Position.x, @Position.y = tonumber(p1 or 0), tonumber(p2 or 0)
+    new: (p1, p2)=> @set(p1, p2)
 class Tetrad extends Dyad
-    velocity: {x: nil, y: nil},
+    lerp: (o, t)=>
+        super\lerp(o, t)
+        if (o.Velocity != nil) then
+            @Velocity.x = _lerp(@Velocity.x, o.Position.x, tonumber(t))
+            @Velocity.y = _lerp(@Velocity.y, o.Position.y, tonumber(t))
+        (@)
+    distance: (o)=>
+        if (o.Position != nil) then
+            return (math.sqrt(math.pow(o.Position.x-@Position.x, 2)+
+                math.pow(o.Position.y - @Position.y, 2)))
+        (0)
     set: (p1, p2, v1, v2)=>
-        @position.x = tonumber(p1 or @position.x or 0)
-        @position.y = tonumber(p2 or @position.y or 0)
-        @velocity.x = tonumber(v1 or @velocity.x or 0)
-        @velocity.y = tonumber(v2 or @velocity.y or 0)
-    update: (deltaTime)=>
-        if deltaTime == nil then deltaTime = love.timer.getDelta!
-        if (@velocity.x != 0) then @position.x += (@velocity.x * deltaTime)
-        if (@velocity.y != 0) then @position.y += (@velocity.y * deltaTime)
+        super\set(p1, p2)
+        @Velocity or= {}
+        @Velocity.x, @Velocity.y = tonumber(v1 or 0), tonumber(v2 or 0)
+    update: (dT=(1/60))=>
+        @Position.x += (@Velocity.x*dT)
+        @Position.y += (@Velocity.y*dT)
     impulse: (angle, force)=>
-        @velocity.x += (math.cos(angle) * force)
-        @velocity.y += (math.sin(angle) * force)
-    new: (p1, p2, v1, v2)=>
-        @set(p1, p2, v1, v2)
+        v = (math.cos(angle)*force)
+        @Velocity.x += v
+        @Velocity.y += v
+    new: (p1, p2, v1, v2)=> @set(p1, p2, v1, v2)
 class Hexad extends Tetrad
-    rotator: {value: 0, velocity: 0},
-    torque: (by)=> @rotator.velocity += tonumber(by)
-    update: (deltaTime)=>
-        @rotator.value += (@rotator.velocity * deltatime)
-        super\update(deltaTime)
+    set: (p1, p2, v1, v2, r, rV)=>
+        super\set(p1, p2, v1, v2)
+        @Rotator or= {}
+        @Rotator.value, @Rotator.inertia = tonumber(r or 0), tonumber(rV or 0)
+    update: (dT=(1/60)) =>
+        super\update(dT)
+        @Rotator.value += (@Rotator.inertia*dT)
+    torque: (by)=> @Rotator.inertia += tonumber(by)
+    new: (p1, p2, v1, v2, r, rv)=> @set(p1, p2, v1, v2, r, rV)
 class Octad extends Hexad
-    dimensional: {position: 0, velocity: 0},
-    slant: (by)=> @dimensional.velocity += tonumber(by)
-    update: (deltaTime)=>
-        @dimensional.position += (@dimensional.velocity * deltaTime)
-        super\update(deltaTime)
+    set: (p1, p2, v1, v2, r, rV, dA, dE)=>
+        super\set(p1, p2, v1, v2, r, rV)
+        @Dimensional or= {}
+        @Dimensional.address, @Dimensional.entropy = tonumber(dA or 0), tonumber(dE or 0)
+    shake: (by)=> @Dimensional.entropy += tonumber(by)
+    update: (dT=(1/60))=>
+        super\update(dT)
+        @Dimensional.address += (@Dimensional.entropy*dT)
+    new: (p1, p2, v1, v2, r, rv)=> @set(p1, p2, v1, v2, r, rV, dA, dE)
 truncate = (value)->
-    if (value == nil) then return nil
-    if (value >= 0) then return math.floor(value + 0.5)
-    else do return math.ceil(value - 0.5)
+    if (value == nil) then return (0)
+    if (value >= 0) then return math.floor(value+0.5)
+    math.ceil(value-0.5)
 class Shape
     translation: Tetrad!
     distance: (toShape)=>
-        return math.sqrt((@translation.position.x - toShape.position.x)^2 +
-            (@translation.position.y - toShape.position.y)^2)
+        return math.sqrt((@translation.Position.x - toShape.Position.x)^2 +
+            (@translation.Position.y - toShape.Position.y)^2)
     draw: => nil
 class Circle extends Shape
     new: (x, y, radius=1, mode='line')=>
         @radius = tonumber(radius)
         @mode = tostring(mode)
-        @position\set(x, y)
+        @Position\set(x, y)
     draw: =>
-        love.graphics.circle(@mode, @position.x, @position.y, @radius)
+        love.graphics.circle(@mode, @Position.x, @Position.y, @radius)
 class Line extends Shape
     endPoint: Dyad!
     new: (oX, oY, eX, eY)=>
-        @position.set()
+        @Position.set()
 class Rectangle extends Shape
     new: (X, Y, Width, Height)=>
         @dimensions = { width: Width, height: Height }
-        @position\set(X, Y)
+        @Position\set(X, Y)
 class Polygon extends Shape
     points: {}
 class Matrix
@@ -147,13 +165,13 @@ class Matrix
     fill: ()=>
     dot: (VectorOrMatrix)=>
         sum = 0
-        return sum
+        (sum)
     sum: =>
         sum = 0
         for k,v in pairs(@) do 
             for i,j in pairs(v) do
                 sum += j
-        return sum
+        (sum)
     maximum: =>
         found = -math.huge
         for k,v in pairs(@) do
@@ -208,8 +226,12 @@ MTLibrary = {
     :meta, 
     logic: {
         :Container, :Timer,
+
     },
-    math: { 
+    math: {
+        random: (tbl)->
+            if (type(tbl) == 'table') then return (tbl[math.random(#tbl)])
+            else return math.random(tonumber(tbl))
         ifs: {
             sin: (x,y)-> return math.sin(x), math.sin(y)
             sphere: (x,y)->
@@ -354,12 +376,13 @@ MTLibrary = {
 -- @love
 if love then
     -- @graphics
-    class Camera
+    class Projector
         scale: { x: 0, y: 0 }
         state: false
         new: ()=>
         setup: ()=>
-        render: ()=>
+        push: ()=>
+        pop: ()=>
     class View
     class List extends View
     class Grid extends List
