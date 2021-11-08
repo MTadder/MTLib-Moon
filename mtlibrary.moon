@@ -75,23 +75,31 @@ class Container
 -- @math
 _sigmoid = (x)-> (1/(1+math.exp(-x)))
 _lerp = (a,b,t)-> (a+(b-a)*t)
+_intersects = (o1x, o1y, e1x, e1y, o2x, o2y, e2x, e2y)->
+    -- adapted from https://gist.github.com/Joncom/e8e8d18ebe7fe55c3894
+    s1x, s1y = (e1x - o1x), (e1y - o1y)
+    s2x, s2y = (e2x - o2x), (e2y - o2y)
+    s = (-s1y * (o1x - o2x) + s1x * (o1y - o2y)) / (-s2x * s1y + s1x * s2y)
+    t = ( s2x * (o1y - o2y) - s2y * (o1x - o2x)) / (-s2x * s1y + s1x * s2y)
+    return (s >= 0 and s <= 1 and t >= 0 and t <= 1)
+
 class Dyad
     lerp: (o, t)=>
-        if (o.Position != nil) then
+        if (o.__class.__name == "Dyad") then
             @Position.x = _lerp(@Position.x, o.Position.x, tonumber(t))
             @Position.y = _lerp(@Position.y, o.Position.y, tonumber(t))
-        (@)
-    set: (p1, p2)=>
+        return @Position.x, @Position.y
+    set: (x, y)=>
         @Position or= {}
-        @Position.x, @Position.y = tonumber(p1 or 0), tonumber(p2 or 0)
-    get: => return @Position.x, @Position.y
+        @Position.x, @Position.y = tonumber(x or 0), tonumber(y or 0)
+    get: => return unpack({ @Position.x, @Position.y })
     equals: (o)=>
         if (o.Position != nil) then
             posEq = (@Position.x == o.Position.x and @Position.y == o.Position.y)
             return posEq
         (false)
     __tostring:=> ("D{#{@Position.x}, #{@Position.y}}")
-    new: (p1, p2)=> @set(p1, p2)
+    new: (x, y)=> @set(x, y)
 class Tetrad extends Dyad
     lerp: (o, t)=>
         super\lerp(o, t)
@@ -108,7 +116,9 @@ class Tetrad extends Dyad
         super\set(p1, p2)
         @Velocity or= {}
         @Velocity.x, @Velocity.y = tonumber(v1 or 0), tonumber(v2 or 0)
-    get: => return @Position.x, @Position.y, @Velocity.x, @Velocity.y
+    get: => return unpack({
+        @Position.x, @Position.y,
+        @Velocity.x, @Velocity.y })
     update: (dT=(1/60))=>
         @Position.x += (@Velocity.x*dT)
         @Position.y += (@Velocity.y*dT)
@@ -123,7 +133,10 @@ class Hexad extends Tetrad
         super\set(p1, p2, v1, v2)
         @Rotator or= {}
         @Rotator.value, @Rotator.inertia = tonumber(r or 0), tonumber(rV or 0)
-    get: => return @Position.x, @Position.y, @Velocity.x, @Velocity.y, @Rotator.value, @Rotator.inertia
+    get: => return unpack({
+        @Position.x, @Position.y,
+        @Velocity.x, @Velocity.y,
+        @Rotator.value, @Rotator.inertia })
     update: (dT=(1/60)) =>
         super\update(dT)
         @Rotator.value += (@Rotator.inertia*dT)
@@ -135,76 +148,87 @@ class Octad extends Hexad
         super\set(p1, p2, v1, v2, r, rV)
         @Dimensional or= {}
         @Dimensional.address, @Dimensional.entropy = tonumber(dA or 0), tonumber(dE or 0)
-    get: =>
-        unpack or= table.unpack
-        res = {
-            @Position.x, @Position.y, @Velocity.x, @Velocity.y,
-            @Rotator.value, @Rotator.inertia, @Dimensional.address, @Dimensional.entropy
-        }
-        return unpack(res)
+    get: => return unpack({
+        @Position.x, @Position.y,
+        @Velocity.x, @Velocity.y,
+        @Rotator.value, @Rotator.inertia,
+        @Dimensional.address, @Dimensional.entropy })
     shake: (by)=> @Dimensional.entropy += tonumber(by)
     update: (dT=(1/60))=>
         super\update(dT)
         @Dimensional.address += (@Dimensional.entropy*dT)
     __tostring: => (super.__tostring(@))..("O{#{@Dimensional.address}, #{@Dimensional.entropy}}")
-    new: (p1, p2, v1, v2, r, rv)=> @set(p1, p2, v1, v2, r, rV, dA, dE)
+    new: (p1, p2, v1, v2, r, rv, dA, dE)=> @set(p1, p2, v1, v2, r, rV, dA, dE)
 truncate = (value)->
     if (value == nil) then return (0)
     if (value >= 0) then return math.floor(value+0.5)
     math.ceil(value-0.5)
 class Shape
-    teleport: (o, o2)=> @Origin.set(o, o2)
-    new: ()=> @Origin or= Octad!
+    set: (oX, oY)=>
+        @Origin or= Dyad(tonumber(oX or 0), tonumber(oY or 0))
+    __tostring: => ("S{#{tostring(@Origin)}}")
+    new: (oX, oY)=> @set(oX, oY)
 class Circle extends Shape
-    new: (x, y, radius)=>
-        @teleport(x, y)
-        @Radius or= (radius or math.pi)
-    draw: (mode) =>
-        love.graphics.circle(mode, @Origin.x, @Origin.y, @Radius)
+    set: (oX, oY, radi)=>
+        super\set(oX, oY)
+        @Radius or= tonumber(radi or math.pi)
+    draw: (mode) => love.graphics.circle(mode, @Origin.x, @Origin.y, @Radius)
+    __tostring: => super.__tostring(@)..("C{#{@Radius}}")
+    new: (x, y, rad)=> @set(x, y, rad)
 class Line extends Shape
+    set: (oX, oY, eX, eY)=>
+        super\set(oX, oY)
+        @Ending or= Dyad(eX, eY)
+    get: => return unpack({
+        @Origin.Position.x, @Origin.Position.y,
+        @Ending.Position.x, @Ending.Position.x })
+    getDistance: (o)=> return nil
+    getLength: =>
+        sOX, sOY = @Origin\get!
+        sEX, sEY = @Ending\get!
+        return math.sqrt(math.pow(sEX-sOX,2)+math.pow(sEY-sOY, 2))
+    getSlope: => return ((@Ending.Position.x-@Origin.Position.x)/(@Ending.Position.y-@Origin.Position.y))
     intersects: (o)=>
-        if (o.Origin != nil and o.Ending != nil) then
-            sOX, sOY = @Origin.get!
-            sEX, sEY = @Ending.get!
-            oOX, oOY = o.Origin.get!
-            oEX, oEY = o.Ending.get!
-            det = (sEX-sOX)*(oEY-oOY)-(oEX-sOX)*(sOX-sOY)
-            if (det == 0) then return (@Origin.equals(o.Origin) or @Ending.equals(o.Ending))
-            lam = ((oEY-oOY)*(oEX-sOX)+(oOX-oEX)*(oEY-sOY))/det
-            gam = ((sOY-sEY)*(oEX-sOX)+(sEX-sOX)*(oEY-sOY))/det
-            return ((0 < lam and lam < 1) and (0 < gam and gam < 1))
-        else if (o.Origin != nil and o.Limits != nil) then
-            for i,line in ipairs(o\getLines!) do
-                if (@intersects(line)) then return (true)
+        if (o.__class.__name == "Line") then
+            sOX, sOY, sEX, sEY = @get!
+            oOX, oOY, oEX, oEY = o\get!
+            if (_intersects(sOX, sOY, sEX, sEY, oOX, oOY, oEX, oEY)) then return (true)
             return (false)
-        (nil)
-    new: (oX, oY, eX, eY)=>
-        @teleport(oX, oY)
-        @Ending or= Dyad(eX, eX)
+        return (nil)
+    __tostring: => super.__tostring(@)..("-->{#{tostring(@Ending)}}")
+    new: (oX, oY, eX, eY)=> @set(oX, oY, eX, eY)
 class Rectangle extends Shape
+    set: (oX, oY, lX, lY)=>
+        super\set(oX, oY)
+        @Limits or= Dyad(lX, lY)
+    get: => return unpack({
+        @Origin.Position.x, @Origin.Position.y,
+        @Limits.Position.x, @Limits.Position.y })
     area: => (@Limits.Position.x*@Limits.Position.y)
     diagonal: => math.sqrt(math.pow(@Limits.Position.x, 2), math.pow(@Limits.Position.y, 2))
     perimeter: => (2*(@Limits.Position.x+@Limits.Position.y))
-    contains: (o)=> -- simplify for Dyads
-        -- if (o.Position != nil) then
-
-        -- else do
-        --     oOX, oOY = o.Origin\get!
-        --     oEX, oEY = o.Ending\get!
-        --     sOX, sOY = @Origin\get!
-        --     sLX, sLY = @Limits\get!
-        --     return ((oOX >= sOX and oOY <= sOY) and (oEX <= sLX and oEY <))
+    contains: (o)=>
+        if (o.__class.__name == "Dyad") then
+            sOX, sOY, sLX, sLY = @get!
+            pos = (o.Position or error("o.Position is nil!"))
+            return ((pos.x > sOX and pos.x < sLX) and (pos.y < sOY and pos.y <= sLY))
+        if (o.__class.__name == "Line") then
+            for i,line in ipairs(@\getLines!) do
+                if (o\intersects(line)) then return (true)
+            return (o\contains(@Origin) or o\contains(@Ending))
+        if (o.__class.__name == "Rectangle") then
+            sOX, sOY, sLX, sLY = @get!
+            oOX, oOY, oLX, oLY = o\get!
+            return ((oOX > sOX and oOY > sOY) and (oEX < sLX and oLY < sLY))
         (nil)
     getLines: =>
-        return {
-            [1]: Line(@Origin.get!, @Limits.Position.get!),
-            [2]: Line(@Limits.Position.x, @Origin.Position.y, @Limits.get!),
-            [3]: Line(@Limits.get!, @Origin.Position.x, @Limits.Position.y),
-            [4]: Line(@Limits.Position.x, @Limits.Position.y, @Origin.get!),
-        }
-    new: (x, y, w, h)=>
-        @teleport(x, y)
-        @Limits or= Dyad(w, h)
+        sOX, sOY, sLX, sLY = @get!
+        return ({
+            [1]: Line(sOX, sOY, sOX, sLY),
+            [2]: Line(sOX, sLY, sLX, sLY),
+            [3]: Line(sLX, sLY, sLX, sOY),
+            [4]: Line(sLX, sOY, sOX, sOY) })
+    new: (oX, oY, lX, lY)=> @set(oX, oY, lX, lY)
 class Polygon extends Shape
     points: {}
 class Matrix
