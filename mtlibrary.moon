@@ -1,65 +1,70 @@
-meta = {
+_meta = {
     name: 'MTLibrary'
     author: 'MTadder'
     version: {
         major: 0
         minor: 6
-        revision: 7
+        revision: 9
+        codename: 'tubules'
         str:-> return ("#{major}.#{minor}.#{revision}")
     }
-    date: 'Nov. 6th, 2021'
+    date: 'Nov. 8th, 2021'
 }
 
 -- @logic
-class Exception
-    Message: "", CallsError: false,
-    new: (message, callsError=false)=> @Message, @CallsError = message, callsError
-    __call:=> if (@CallsError) then error(@message)
+_unpack = (unpack or table.unpack)
+_are = (tbl, ofClass)->
+    for i,v in pairs(tbl) do if ((_is(v, ofClass)) == false) then return (false)
+    return (true)
+_is = (v, ofClass)->
+    if ((v == nil) and (ofClass == nil)) then return (true)
+    if ((v == nil) or (ofClass == nil)) then return (false)
+    if ((type(v) == 'table') and (v.__class == nil)) then return (_are(v, ofClass))
+    if (v.__class != nil) then
+        if (ofClass.__class != nil) then return (ofClass.__class.__name == v.__class.__name)
+        else if (type(ofClass) == 'string') then return (v.__class.__name == ofClass)
+    return (type(v) == type(ofClass))
 
 class Timer
-    Duration: 0,
-    Remainder: 0,
-    Looping: false,
-    On_Completion: ()->nil
-    On_Update: (time_left)->nil
     new: (duration, on_complete, on_update, looping=false)=>
-        @Duration, @Looping, @On_Completion = duration, looping, on_complete
+        @Duration, @Looping = duration, looping
+        @On_Update, @On_Completion = (on_update or ()->nil), (on_complete or ()->nil)
         @restart!
     restart: ()=> @Remainder = @Duration
     finished: ()=> return ((@Remainder <= 0) and (@Looping == false))
     update: (dT)=>
-        assert(dT, "timer.update called without a deltaTime argument!")
-        assert(type(dT) == 'number', "timer.update was called with a #{type(dT)} deltaTime argument!")
-        @Remainder -= dt
+        @Remainder -= dT
         if (@Remainder <= 0) then
-            if (@Looping == true) then
-                @restart!
-            return (@Looping == false), @On_Completion!
-        else return false, nil
+            if (@Looping == true) then @restart!
+            return (true), (@On_Completion!)
+        return (false), (@On_Update!)
 
 class Container
-    Items: {}
-    Keys: {}
-    get: (key)=> for k,k2 in ipairs(@Keys) do if (k2 == key) then return (@Items[k])
+    get: (key)=>
+        for k,k2 in ipairs(@Keys) do
+            if (k2 == key) then return (@Items[k])
+        return (nil)
     getKey: (item)=>
         for k,i in ipairs(@Items) do
-            if (i == item) then
-                for k2,k3 in ipairs(@Keys) do
-                    if (k2 == k) then return (k3)
-        (nil)
-    count: ()=> ((#@Items) or 0)
-    top: => (@Items[@count!])
+            if (i == item) then for k2,k3 in ipairs(@Keys) do
+                if (k2 == k) then return (k3)
+        return (nil)
+    count: ()=> return ((#@Items) or 0)
+    top: => return (@Items[@count!])
     pop: =>
-        if item = @top! then @Items[@count!] = nil
-        (item or nil)
+        item = @top!
+        if (item == nil) then @Items[@count!] = nil
+        return (item or nil)
     insert: (item, key)=>
         if (type(item) == 'table') then
             for k,v in pairs(item) do @insert(v, k)
-        else do @Items[#@Items+1], @Keys[#@Keys+1] = item, (key or @count!+1)
+        else @Items[#@Items+1], @Keys[#@Keys+1] = item, (key or @count!+1)
     __call: (item, key)=>
         @insert(item, key)
-        (@)
+        if (key == nil) then return (@count!)
+        else return (key)
     new: (initial)=>
+        @Items, @Keys = {}, {}
         @insert(initial)
         (@)
     iterator: ()=>
@@ -85,14 +90,14 @@ _intersects = (o1x, o1y, e1x, e1y, o2x, o2y, e2x, e2y)->
 
 class Dyad
     lerp: (o, t)=>
-        if (o.__class.__name == "Dyad") then
+        if (_is(o, 'Dyad')) then
             @Position.x = _lerp(@Position.x, o.Position.x, tonumber(t))
             @Position.y = _lerp(@Position.y, o.Position.y, tonumber(t))
         return @Position.x, @Position.y
     set: (x, y)=>
         @Position or= {}
         @Position.x, @Position.y = tonumber(x or 0), tonumber(y or 0)
-    get: => return unpack({ @Position.x, @Position.y })
+    get: => return _unpack({ @Position.x, @Position.y })
     equals: (o)=>
         if (o.Position != nil) then
             posEq = (@Position.x == o.Position.x and @Position.y == o.Position.y)
@@ -103,12 +108,12 @@ class Dyad
 class Tetrad extends Dyad
     lerp: (o, t)=>
         super\lerp(o, t)
-        if (o.Velocity != nil) then
+        if (_is(o, 'Tetrad')) then
             @Velocity.x = _lerp(@Velocity.x, o.Position.x, tonumber(t))
             @Velocity.y = _lerp(@Velocity.y, o.Position.y, tonumber(t))
         (@)
     distance: (o)=>
-        if (o.Position != nil) then
+        if (o.Position != nil) then -- _inherits(Dyad)
             return (math.sqrt(math.pow(o.Position.x-@Position.x, 2)+
                 math.pow(o.Position.y - @Position.y, 2)))
         (0)
@@ -116,7 +121,7 @@ class Tetrad extends Dyad
         super\set(p1, p2)
         @Velocity or= {}
         @Velocity.x, @Velocity.y = tonumber(v1 or 0), tonumber(v2 or 0)
-    get: => return unpack({
+    get: => return _unpack({
         @Position.x, @Position.y,
         @Velocity.x, @Velocity.y })
     update: (dT=(1/60))=>
@@ -133,7 +138,7 @@ class Hexad extends Tetrad
         super\set(p1, p2, v1, v2)
         @Rotator or= {}
         @Rotator.value, @Rotator.inertia = tonumber(r or 0), tonumber(rV or 0)
-    get: => return unpack({
+    get: => return _unpack({
         @Position.x, @Position.y,
         @Velocity.x, @Velocity.y,
         @Rotator.value, @Rotator.inertia })
@@ -148,7 +153,7 @@ class Octad extends Hexad
         super\set(p1, p2, v1, v2, r, rV)
         @Dimensional or= {}
         @Dimensional.address, @Dimensional.entropy = tonumber(dA or 0), tonumber(dE or 0)
-    get: => return unpack({
+    get: => return _unpack({
         @Position.x, @Position.y,
         @Velocity.x, @Velocity.y,
         @Rotator.value, @Rotator.inertia,
@@ -188,13 +193,23 @@ class Line extends Shape
         sEX, sEY = @Ending\get!
         return math.sqrt(math.pow(sEX-sOX,2)+math.pow(sEY-sOY, 2))
     getSlope: => return ((@Ending.Position.x-@Origin.Position.x)/(@Ending.Position.y-@Origin.Position.y))
+    map: (o, x, y) => return ((@getSlope!*x)-(-x))
     intersects: (o)=>
-        if (o.__class.__name == "Line") then
+        if (_is(o, 'Dyad')) then
+            error(debug.traceback!)
+            -- y0-y1 = slope*(x0-x1)
+            sOX, sOY, sEX, sEY = @get!
+            oPX, oPY = o\get!
+            slope = @getSlope!
+        if (_is(o, 'Line')) then
             sOX, sOY, sEX, sEY = @get!
             oOX, oOY, oEX, oEY = o\get!
             if (_intersects(sOX, sOY, sEX, sEY, oOX, oOY, oEX, oEY)) then return (true)
             return (false)
-        return (nil)
+        if (_is(o, 'Rectangle')) then
+            for i,line in ipairs(o\getLines!) do
+                if (@intersects(line)) then return (true)
+        return (false)
     __tostring: => super.__tostring(@)..("-->{#{tostring(@Ending)}}")
     new: (oX, oY, eX, eY)=> @set(oX, oY, eX, eY)
 class Rectangle extends Shape
@@ -208,18 +223,17 @@ class Rectangle extends Shape
     diagonal: => math.sqrt(math.pow(@Limits.Position.x, 2), math.pow(@Limits.Position.y, 2))
     perimeter: => (2*(@Limits.Position.x+@Limits.Position.y))
     contains: (o)=>
-        if (o.__class.__name == "Dyad") then
+        if (_is(o, 'Dyad')) then
             sOX, sOY, sLX, sLY = @get!
-            pos = (o.Position or error("o.Position is nil!"))
-            return ((pos.x > sOX and pos.x < sLX) and (pos.y < sOY and pos.y <= sLY))
-        if (o.__class.__name == "Line") then
-            for i,line in ipairs(@\getLines!) do
-                if (o\intersects(line)) then return (true)
-            return (o\contains(@Origin) or o\contains(@Ending))
-        if (o.__class.__name == "Rectangle") then
-            sOX, sOY, sLX, sLY = @get!
-            oOX, oOY, oLX, oLY = o\get!
-            return ((oOX > sOX and oOY > sOY) and (oEX < sLX and oLY < sLY))
+            oPX, oPY = o\get!
+            return ((oPX > sOX and oPY < sLX) and (oPY > sOY and oPY < sLY))
+        if (_is(o, 'Line')) then
+            return (@contains(o.Origin) and @contains(o.Ending))
+        if (_is(o, Rectangle)) then
+            for i,line in ipairs(o\getLines!) do
+                if not (@contains(line.Origin) and @contains(line.Ending)) then
+                    return (false)
+            return (true)
         (nil)
     getLines: =>
         sOX, sOY, sLX, sLY = @get!
@@ -230,7 +244,6 @@ class Rectangle extends Shape
             [4]: Line(sLX, sOY, sOX, sOY) })
     new: (oX, oY, lX, lY)=> @set(oX, oY, lX, lY)
 class Polygon extends Shape
-    points: {}
 class Matrix
     __add: (Left, Right)->
     __sub: (Left, Right)->
@@ -240,29 +253,27 @@ class Matrix
     fill: ()=>
     dot: (VectorOrMatrix)=>
         sum = 0
-        (sum)
+        return (sum)
     sum: =>
         sum = 0
         for k,v in pairs(@) do 
             for i,j in pairs(v) do
                 sum += j
-        (sum)
+        return (sum)
     maximum: =>
         found = -math.huge
         for k,v in pairs(@) do
             for i,j in pairs(v) do
                 if (j > found) then found = j
-        return found
+        return (found)
     minimum: =>
         found = math.huge
-        for k, v in pairs(@) do
-            for i, j in pairs(v) do
-                if (j < found) then found = j
-        return found
+        for k, v in pairs(@) do for i, j in pairs(v) do
+            if (j < found) then found = j
+        return (found)
     new: (arrays)=>
         if (type(TblOrDimensions) == 'table') then
-            for k,v in ipairs(TblOrDimensions) do
-                table.insert(@, k, v)
+            for k,v in ipairs(TblOrDimensions) do table.insert(@, k, v)
         elseif (type(TblOrDimensions) == 'number') then
             with Dimensions = TblOrDimensions do
                 FillWith = (Lengths or 0)
@@ -274,34 +285,31 @@ class Matrix
                         for j,k in pairs(FillWith) do @[i][j] = k
 
 -- @string
-serialize = (Object, ShowIndices=false, Indentation=1)->
+serialize = (obj, showIndices=false)->
     serial = ''
-    switch type(Object)
+    switch type(obj)
         when 'table' do
-            serial ..= "{\n"
-            serial ..= string.rep(' ', Indentation)
-            for k,v in pairs(Object) do
-                if (ShowIndices) then serial ..= "[#{k}]="
-                serial ..= "#{serialize(v, ShowIndices, Indentation+1)}, "
-            serial ..= "\n#{string.rep(' ', Indentation-1)}}"
-        when 'number' do serial ..= string.format('%d', Object)
-        when 'string' do serial ..= string.format('%q', Object)
-        else do serial ..= "(#{tostring(Object)})"
+            if (#obj == 0) then return ("{}") 
+            serial ..= "{"
+            for k,v in pairs(obj) do
+                if (showIndices) then serial ..= "[#{k}]="
+                serial ..= "#{serialize(v, showIndices)}, "
+            serial = serial\sub(1, -3)
+            serial ..= "}"
+        when 'number' do serial ..= string.format('%d', obj)
+        when 'string' do serial ..= string.format('%q', obj)
+        else serial ..= "(#{tostring(obj)})"
     return (serial)
-split = (str, delimiter)->
-    assert(type(str) == 'string')
-    with res = {}
-        regex = ("([^%s]+)")\format(delimiter)
-        for m in str\gmatch(regex) do
-            table.insert(res, m)
-        return (res)
+
+split = (str, delimiter)-> return (nil) -- @TODO
+--     assert(type(str) == 'string')
+--     return {m for m in str\gmatch(("([^%s]+)")\format(delimiter))}
 
 -- @module
 MTLibrary = {
-    :meta, 
+    :_meta, 
     logic: {
         :Container, :Timer,
-
     },
     math: {
         random: (tbl)->
@@ -362,7 +370,7 @@ MTLibrary = {
                 if (x < 0 and y >= 0) then return x*2, y
                 elseif (x >= 0 and y < 0) then return x, y*0.5
                 elseif (x < 0 and y < 0) then return x*2, y*0.5
-                else do return x, y
+                else return x, y
             waves: (x,y, a, b, c, d, e, f)->
                 return (x+b*math.sin(y/(c*c))), (y+e*math.sin(x/(f*f)))
             fisheye: (x,y)->
@@ -393,7 +401,7 @@ MTLibrary = {
                 arcTan = math.atan(x/y)
                 if ((arcTan+f)%t) > (t*0.5) then
                     return r*math.cos(arcTan-(t*0.5)), r*math.sin(arcTan-(t*0.5))
-                else do return r*math.cos(arcTan+(t*0.5)), r*math.sin(arcTan+(t*0.5))
+                else return r*math.cos(arcTan+(t*0.5)), r*math.sin(arcTan+(t*0.5))
             blob: (x,y, b)->
                 r = math.sqrt((x*x)+(y*y))
                 arcTan = math.atan(x/y)
