@@ -1,54 +1,36 @@
 _meta = {
     name: 'MTLibrary',
     author: 'MTadder',
-    date: 'Nov. 13th, 2021'
+    date: 'Nov. 26th, 2021'
     version: {
         major: 0,
         minor: 6,
-        revision: 14,
-        codename: 'juulii',
-        str:-> ("#{major}.#{minor}.#{revision}")
-    },
+        revision: 17,
+        codename: '(◝ ◡◝)'
+    }
 }
 
 -- @logic
 _nop = ()-> (nil)
 _unpack = (unpack or table.unpack)
-_binarySearch = (tbl, val, comparator, resolver, isReversed)->
-    if ((tbl == nil) or (val == nil)) then return (nil)
-    comparator or= ((isReversed and (a, b)-> (a > b)) or (a, b)-> (a < b))
-    resolver or= ((val)-> (val))
-    iStart, iEnd, iMid = 1, #tbl, 0
-    while (iStart <= iEnd) do
-        iMid = math.floor((iStart+iEnd)/2)
-        compVal = resolver(tbl[iMid])
-        if (val == compVal) then
-            return (iMid)
-            -- n = (iMid-1)
-            -- tFound = {iMid, iMid}
-            -- while (val == resolver(tbl[n])) do
-            --     tFound[1] = n
-            --     n -= 1
-            -- n = (iMid+1)
-            -- while (val == resolver(tbl[n])) do
-            --     tFound[2] = n
-            --     n += 1
-            -- return (tFound)
-        elseif (comparator(val, compVal)) then iEnd = (iMid-1)
-        else iStart = (iMid+1)
+_binarySearch = (list, value, resolver)->
+    if ((list == nil) or (value == nil)) then return (nil)
+    resolver or= ((value)-> (value))
+    found, lower, upper = false, 1, #list
+    while (found == false) do
+        check = math.floor(((upper-lower)/2)+.5)
+        if (list[check] == nil) then break
+        elseif (upper == lower) then break
+        elseif (resolver(list[check]) == value) then return (check)
+        elseif (resolver(list[check]) < value) then upper = check
+        elseif (resolver(list[check]) > value) then lower = check
     (nil)
--- _binarySearchSingular = (tbl, val, comparator, resolver, isReversed)->
---     s = _binarySearch(tbl, val, comparator, resolver, isReversed)
---     if ((s != nil) and (#s == 2)) then
---         if (s[1] == s[2]) then return (tbl[s[1]])
---         -- ? return ((comparator(tbl[s[1]], tbl[s[2]]) and tbl[s[1]]) or (tbl[s[2]]))
---     (nil)
 _binaryInsert = (tbl, val, comparator)->
     if ((tbl == nil) or (val == nil)) then return (nil)
     comparator or= (a, b)-> (a < b)
     iStart, iEnd, iMid, iState = 1, #tbl, 1, 0
     while (iStart <= iEnd) do
-        iMid = math.floor((iStart+iEnd)/2)
+        iMid = math.floor(((iStart+iEnd)/2+.5))
         if comparator(val, tbl[iMid]) then
             iEnd, iState = iMid-1, 0
         else iStart, iState = iMid+1, 1
@@ -59,7 +41,7 @@ _are = (tbl, ofClass)->
     for i,v in pairs(tbl) do
         if ((_is(v, ofClass)) == false) then return (false)
     (true)
-_is = (v, ofClass)->
+_is = (v, ofClass)-> -- This could probably be simplified.
     if ((v == nil) and (ofClass == nil)) then return (true)
     elseif ((v == nil) or (ofClass == nil)) then return (false)
     elseif ((type(v) == 'table') and (v.__class == nil)) then
@@ -68,7 +50,8 @@ _is = (v, ofClass)->
         return (v.__class.__name == ofClass)
     elseif (v.__class != nil) then return (ofClass == v.__class)
     else return ((v == ofClass) or (type(v) == ofClass))
-_isAncestor = (obj, ofClass)->
+
+_isAncestor = (obj, ofClass)-> -- This too. Read up on the Moonscript manual.
     if ((obj == nil) or (ofClass == nil)) then return (false)
     elseif (obj.__parent != nil) then
         if (obj.__parent.__name == ofClass.__name) then return (true)
@@ -83,7 +66,7 @@ class Timer
         if (@Remainder <= 0) then
             if (@Looping == true) then @restart!
             return (true), (@On_Completion!)
-        (false), (@On_Update!)
+        return (false), (@On_Update!)
     isComplete: => ((@Remainder <= 0) and (@Looping == false))
     restart: =>
         @Remainder = @Duration
@@ -97,10 +80,8 @@ assert(_is(Timer, 'Timer'))
 
 class Container
     get: (key)=>
-        -- for k,k2 in ipairs(@Keys) do
-        --     if (k2 == key) then return (@Items[k] or nil)
-        comparator = (a, b)-> (a == b)
-        (_binarySearch(@Items, _binarySearch(@Keys, key, comparator), comparator) or nil)
+        for k,v in pairs(@Keys) do if (v == key) then return (@Items[k] or nil)
+        (nil)
     getKey: (item)=>
         for k,i in ipairs(@Items) do
             if (i == item) then for k2,k3 in ipairs(@Keys) do
@@ -139,8 +120,11 @@ assert(_is(Container, 'Container'))
 
 -- @math
 _sigmoid = (x)-> (1/(1+math.exp(-x)))
-_lerp = (a,b,t)-> (a+(b-a)*t)
+_dist = (x, y, oX, oY)-> math.abs(math.sqrt(math.pow(x-oX, 2)+math.pow(y-oY, 2)))
+_lerp = (a, b, t)-> (a+(b-a)*t)
 _isWithin = (x, y, oX, oY, lX, lY)-> ((x > oX and y < lX) and (y > oY and y < lY))
+_isWithinPie = (x, y, oX, oY, oR)->
+
 _intersects = (o1x, o1y, e1x, e1y, o2x, o2y, e2x, e2y)->
     -- adapted from https://gist.github.com/Joncom/e8e8d18ebe7fe55c3894
     s1x, s1y = (e1x - o1x), (e1y - o1y)
@@ -159,9 +143,14 @@ class Dyad
     get: => (@Position.x), (@Position.y)
     equals: (o)=>
         if (_isAncestor(o, 'Dyad')) then
-            posEq = (@Position.x == o.Position.x and @Position.y == o.Position.y)
-            return (posEq)
+            return (@Position.x == o.Position.x and @Position.y == o.Position.y)
         (false)
+    distance: (o)=>
+        if (_isAncestor(o, 'Dyad')) then
+            return _dist()
+            -- return (math.sqrt(math.pow(o.Position.x-@Position.x, 2)+
+            --     math.pow(o.Position.y - @Position.y, 2)))
+        (0)
     __tostring:=> ("D{#{@Position.x}, #{@Position.y}}")
     set: (x, y)=>
         @Position or= {}
@@ -177,11 +166,7 @@ class Tetrad extends Dyad
             @Velocity.x = _lerp(@Velocity.x, o.Position.x, tonumber(t))
             @Velocity.y = _lerp(@Velocity.y, o.Position.y, tonumber(t))
         (@)
-    distance: (o)=>
-        if (_isAncestor(o, 'Dyad')) then
-            return (math.sqrt(math.pow(o.Position.x-@Position.x, 2)+
-                math.pow(o.Position.y - @Position.y, 2)))
-        (0)
+    distance: (o)=> (super\distance(o))
     set: (p1, p2, v1, v2)=>
         super\set(p1, p2)
         @Velocity or= {}
@@ -238,10 +223,6 @@ class Octad extends Hexad
     __tostring: => (super.__tostring(@))..("O{#{@Dimensional.address}, #{@Dimensional.entropy}}")
     new: (p1, p2, v1, v2, r, rv, dA, dE)=> @set(p1, p2, v1, v2, r, rV, dA, dE)
 
-truncate = (value)->
-    if (value == nil) then return (0)
-    elseif (value >= 0) then return math.floor(value+0.5)
-    math.ceil(value-0.5)
 class Shape
     set: (oX, oY)=>
         @Origin or= Dyad(tonumber(oX or 0), tonumber(oY or 0))
@@ -264,9 +245,10 @@ class Line extends Shape
         @Origin.Position.x, @Origin.Position.y,
         @Ending.Position.x, @Ending.Position.x })
     getDistance: (o)=>
+        error!
         if (_isAncestor(o, Dyad)) then
             pX, pY = o\get!
-            error!
+            
     getLength: =>
         sOX, sOY = @Origin\get!
         sEX, sEY = @Ending\get!
@@ -275,11 +257,10 @@ class Line extends Shape
     -- map: (o, x, y) => ((@getSlope!*x)-(-x))
     intersects: (o)=>
         if _is(o, 'Dyad') then
-            error(debug.traceback!)
-            -- y0-y1 = slope*(x0-x1)
             sOX, sOY, sEX, sEY = @get!
             oPX, oPY = o\get!
             slope = @getSlope!
+            return ((slope*sOX+oPX == 0) or (slope*sEX+sPY == 0))
         elseif _is(o, 'Line') then
             sOX, sOY, sEX, sEY = @get!
             oOX, oOY, oEX, oEY = o\get!
@@ -337,24 +318,24 @@ class Matrix
     fill: ()=>
     dot: (VectorOrMatrix)=>
         sum = 0
-        return (sum)
+        (sum)
     sum: =>
         sum = 0
         for k,v in pairs(@) do 
             for i,j in pairs(v) do
                 sum += j
-        return (sum)
+        (sum)
     maximum: =>
         found = -math.huge
         for k,v in pairs(@) do
             for i,j in pairs(v) do
                 if (j > found) then found = j
-        return (found)
+        (found)
     minimum: =>
         found = math.huge
         for k, v in pairs(@) do for i, j in pairs(v) do
             if (j < found) then found = j
-        return (found)
+        (found)
     new: (arrays)=>
         if (type(TblOrDimensions) == 'table') then
             for k,v in ipairs(TblOrDimensions) do table.insert(@, k, v)
@@ -384,10 +365,6 @@ serialize = (obj, showIndices=false)->
         when 'string' do serial ..= string.format('%q', obj)
         else serial ..= "(#{tostring(obj)})"
     (serial)
-
-split = (str, delimiter)-> return (nil) -- @TODO
---     assert(type(str) == 'string')
---     return {m for m in str\gmatch(("([^%s]+)")\format(delimiter))}
 
 -- @return @module
 MTLibrary = { :_meta, logic: { :Container, :Timer }, math: {
