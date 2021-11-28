@@ -1,12 +1,12 @@
 _meta = {
     name: 'MTLibrary',
     author: 'MTadder',
-    date: 'Nov. 26th, 2021'
+    date: 'Nov. 28, 2021'
     version: {
         major: 0,
         minor: 6,
-        revision: 17,
-        codename: '(◝ ◡◝)'
+        revision: 20,
+        codename: '☆^*;|;*^☆'
     }
 }
 
@@ -18,7 +18,7 @@ _binarySearch = (list, value, resolver)->
     resolver or= ((value)-> (value))
     found, lower, upper = false, 1, #list
     while (found == false) do
-        check = math.floor(((upper-lower)/2)+.5)
+        check = math.floor(((upper-lower)/2)+0.5)
         if (list[check] == nil) then break
         elseif (upper == lower) then break
         elseif (resolver(list[check]) == value) then return (check)
@@ -30,17 +30,13 @@ _binaryInsert = (tbl, val, comparator)->
     comparator or= (a, b)-> (a < b)
     iStart, iEnd, iMid, iState = 1, #tbl, 1, 0
     while (iStart <= iEnd) do
-        iMid = math.floor(((iStart+iEnd)/2+.5))
+        iMid = math.floor(((iStart+iEnd)/2+0.5))
         if comparator(val, tbl[iMid]) then
             iEnd, iState = iMid-1, 0
         else iStart, iState = iMid+1, 1
     k = (iMid+iState)
     table.insert(tbl, k, val)
     (k)
-_are = (tbl, ofClass)->
-    for i,v in pairs(tbl) do
-        if ((_is(v, ofClass)) == false) then return (false)
-    (true)
 _is = (v, ofClass)-> -- This could probably be simplified.
     if ((v == nil) and (ofClass == nil)) then return (true)
     elseif ((v == nil) or (ofClass == nil)) then return (false)
@@ -50,8 +46,11 @@ _is = (v, ofClass)-> -- This could probably be simplified.
         return (v.__class.__name == ofClass)
     elseif (v.__class != nil) then return (ofClass == v.__class)
     else return ((v == ofClass) or (type(v) == ofClass))
-
-_isAncestor = (obj, ofClass)-> -- This too. Read up on the Moonscript manual.
+_are = (tbl, ofClass)->
+    for i,v in pairs(tbl) do
+        if ((_is(v, ofClass)) == false) then return (false)
+    (true)
+_isAncestor = (obj, ofClass)-> -- This too. Read up on the Moonscript manual. (@TODO)
     if ((obj == nil) or (ofClass == nil)) then return (false)
     elseif (obj.__parent != nil) then
         if (obj.__parent.__name == ofClass.__name) then return (true)
@@ -76,37 +75,30 @@ class Timer
         @On_Update, @On_Completion = (on_update or _nop), (on_complete or _nop)
         @restart!
         (@)
-assert(_is(Timer, 'Timer'))
 
 class Container
-    get: (key)=>
-        for k,v in pairs(@Keys) do if (v == key) then return (@Items[k] or nil)
-        (nil)
-    getKey: (item)=>
-        for k,i in ipairs(@Items) do
-            if (i == item) then for k2,k3 in ipairs(@Keys) do
-                if (k2 == k) then return (k3)
-        (nil)
-    count: => ((#@Items) or 0)
-    top: => (@Items[@count!])
-    pop: =>
-        item = @top!
-        if (item == nil) then @Items[@count!] = nil
-        (item or nil)
     set: (item, key)=>
-        oldN = @count!
-        if ((type(item) == 'table') and (item.__class == nil)) then
-            for k,v in pairs(item) do @set(v, k)
-        elseif (item != nil) then
-            @Items[#@Items+1], @Keys[#@Keys+1] = item, (key or @count!+1)
-        (oldN < @count!)
-    __call: (item, key)=>
-        @set(item, key)
-        (key or @count!)
+        idx = ((@count!)+1)
+        if (item != nil) then @Items[idx], @Keys[idx] = item, (key or idx)
+        (@count!)
     new: (initial)=>
         @Items, @Keys = {}, {}
         @set(initial)
         (@)
+    __call: (item, key)=> (@set(item, key))
+    get: (key)=>
+        for k,v in pairs(@Keys) do if (v == key) then return (@Items[k] or nil)
+        (nil)
+    getKey: (item)=>
+        for k,v in ipairs(@Items) do if (v == item) then return (@Keys[k])
+        (nil)
+    count: => ((#@Keys) or 0)
+    top: => (@Items[#@Items] or nil)
+    pop: =>
+        item = @top!
+        if (item != nil) then @Items[@count!] = nil
+        (item or nil)
+    forEach: (action)=> ({key,action(key, val) for key,val in @iterator!})
     iterator: ()=>
         i, keys, items = 0, @Keys, @Items
         ()->
@@ -115,15 +107,13 @@ class Container
             if (item == nil) then item = items[keys[i]]
             elseif (item != nil) then return keys[i], item
             (nil)
-    forEach: (action)=> ({key,action(key, val) for key,val in @iterator!})
-assert(_is(Container, 'Container'))
 
 -- @math
 _sigmoid = (x)-> (1/(1+math.exp(-x)))
 _dist = (x, y, oX, oY)-> math.abs(math.sqrt(math.pow(x-oX, 2)+math.pow(y-oY, 2)))
 _lerp = (a, b, t)-> (a+(b-a)*t)
 _isWithin = (x, y, oX, oY, lX, lY)-> ((x > oX and y < lX) and (y > oY and y < lY))
-_isWithinPie = (x, y, oX, oY, oR)->
+_isWithinPie = (x, y, oX, oY, oR)-> -- @TODO
 
 _intersects = (o1x, o1y, e1x, e1y, o2x, o2y, e2x, e2y)->
     -- adapted from https://gist.github.com/Joncom/e8e8d18ebe7fe55c3894
@@ -183,10 +173,9 @@ class Tetrad extends Dyad
         @Velocity.y += v
     __tostring: => (super.__tostring(@))..("T{#{@Velocity.x}, #{@Velocity.y}}")
     new: (p1, p2, v1, v2)=> @set(p1, p2, v1, v2)
-assert(_isAncestor(Tetrad, 'Dyad'))
-assert(_isAncestor(Dyad, 'Tetrad') == false)
 
 class Hexad extends Tetrad
+    new: (p1, p2, v1, v2, r, rv)=> @set(p1, p2, v1, v2, r, rV)
     set: (p1, p2, v1, v2, r, rV)=>
         super\set(p1, p2, v1, v2)
         @Rotator or= {}
@@ -200,13 +189,9 @@ class Hexad extends Tetrad
         @Rotator.value += (@Rotator.inertia*dT)
     torque: (by)=> @Rotator.inertia += tonumber(by)
     __tostring: => (super.__tostring(@))..("H{#{@Rotator.value}, #{@Rotator.inertia}}")
-    new: (p1, p2, v1, v2, r, rv)=> @set(p1, p2, v1, v2, r, rV)
-assert(_isAncestor(Hexad, 'Dyad'))
-assert(_isAncestor(Hexad, 'Tetrad'))
-assert(_isAncestor(Dyad, 'Hexad') == false)
-assert(_isAncestor(Tetrad, 'Hexad') == false)
 
 class Octad extends Hexad
+    new: (p1, p2, v1, v2, r, rv, dA, dE)=> @set(p1, p2, v1, v2, r, rV, dA, dE)
     set: (p1, p2, v1, v2, r, rV, dA, dE)=>
         super\set(p1, p2, v1, v2, r, rV)
         @Dimensional or= {}
@@ -221,13 +206,12 @@ class Octad extends Hexad
         super\update(dT)
         @Dimensional.address += (@Dimensional.entropy*dT)
     __tostring: => (super.__tostring(@))..("O{#{@Dimensional.address}, #{@Dimensional.entropy}}")
-    new: (p1, p2, v1, v2, r, rv, dA, dE)=> @set(p1, p2, v1, v2, r, rV, dA, dE)
 
 class Shape
+    new: (oX, oY)=> @set(oX, oY)
     set: (oX, oY)=>
         @Origin or= Dyad(tonumber(oX or 0), tonumber(oY or 0))
     __tostring: => ("S{#{tostring(@Origin)}}")
-    new: (oX, oY)=> @set(oX, oY)
 
 class Circle extends Shape
     set: (oX, oY, radi)=>
@@ -238,6 +222,7 @@ class Circle extends Shape
     new: (x, y, rad)=> @set(x, y, rad)
 
 class Line extends Shape
+    new: (oX, oY, eX, eY)=> @set(oX, oY, eX, eY)
     set: (oX, oY, eX, eY)=>
         super\set(oX, oY)
         @Ending = Dyad(eX, eY)
@@ -271,9 +256,9 @@ class Line extends Shape
                 if (@intersects(l)) then return (true)
         (false)
     __tostring: => super.__tostring(@)..("-->{#{tostring(@Ending)}}")
-    new: (oX, oY, eX, eY)=> @set(oX, oY, eX, eY)
 
 class Rectangle extends Shape
+    new: (oX, oY, lX, lY)=> @set(oX, oY, lX, lY)
     set: (oX, oY, lX, lY)=>
         super\set(oX, oY)
         @Limits or= Dyad(lX, lY)
@@ -306,7 +291,6 @@ class Rectangle extends Shape
             Line(sOX, sLY, sLX, sLY),
             Line(sLX, sLY, sLX, sOY),
             Line(sLX, sOY, sOX, sOY) })
-    new: (oX, oY, lX, lY)=> @set(oX, oY, lX, lY)
 
 class Polygon extends Shape
 class Matrix
@@ -367,10 +351,12 @@ serialize = (obj, showIndices=false)->
     (serial)
 
 -- @return @module
-MTLibrary = { :_meta, logic: { :Container, :Timer }, math: {
+MTLibrary = { :_meta,
+    logic: { :Container, :Timer, isAncestor: _isAncestor, are: _are, is: _is},
+    math: {
         random: (tbl)->
             if (type(tbl) == 'table') then return (tbl[math.random(#tbl)])
-            math.random(tonumber(tbl))
+            (math.random(tonumber(tbl or 1)))
         ifs: {
             sin: (x,y)-> math.sin(x), math.sin(y)
             sphere: (x,y)->
