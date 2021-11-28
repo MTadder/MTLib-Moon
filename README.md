@@ -1,6 +1,10 @@
 ## Lua MTLibrary
 *logic and utility-focused lua classes written in [Moonscript](https://github.com/leafo/moonscript) [with bindings for [LÖVE2D](https://github.com/love2d/love)]*
 
+_0.6.20_
+
+This file is currently outdated. Updating later today!
+
 ![Logo](MTLibrary_Lua.png "MTLibrary:Lua")
 
 ## Module Contents
