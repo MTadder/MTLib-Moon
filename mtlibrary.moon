@@ -1,12 +1,12 @@
 _meta = {
     name: 'MTLibrary',
     author: 'MTadder',
-    date: 'Nov. 28, 2021'
+    date: 'Nov. 29, 2021'
     version: {
         major: 0,
         minor: 6,
         revision: 20,
-        codename: '☆^*;|;*^☆'
+        codename: '☆^*;+;*^☆'
     }
 }
 
@@ -37,26 +37,35 @@ _binaryInsert = (tbl, val, comparator)->
     k = (iMid+iState)
     table.insert(tbl, k, val)
     (k)
-_is = (v, ofClass)-> -- This could probably be simplified.
-    if ((v == nil) and (ofClass == nil)) then return (true)
-    elseif ((v == nil) or (ofClass == nil)) then return (false)
-    elseif ((type(v) == 'table') and (v.__class == nil)) then
-        return (_are(v, ofClass))
-    elseif (type(ofClass) == 'string') then
-        return (v.__class.__name == ofClass)
-    elseif (v.__class != nil) then return (ofClass == v.__class)
-    else return ((v == ofClass) or (type(v) == ofClass))
+_linearInsert = (tbl, val)->
+    for i=1, #tbl do
+        if (tbl[i] == nil) then
+            table.insert(tbl, i, val)
+            return (i)
+    table.insert(tbl, #tbl+1, val)
+    (#tbl)
+_conforms = (value, toFormat)->
+    for k,v in pairs(toFormat) do if (value[k] == nil) then return (false)
+    (true)
+_is = (v, query)->
+    if (v != nil and query != nil) then
+        if (v.__class != nil) then
+            if (query.__class != nil) then return (v.__class.__name == query.__class.__name)
+            return (v.__class.__name == query)
+    (false)
+_isAncestor = (obj, ofClass)->
+    if (obj == nil or ofClass == nil) then return (false)
+    if (obj.__parent) then
+        if (type(ofClass) == 'string') then return (obj.__parent.__name == ofClass)
+        if (ofClass.__class) then
+            if (obj.__parent == ofClass.__class) then return (true)
+            if (obj.__parent.__name == ofClass.__class.__name) then return (true)
+            else return (_isAncestor(obj.__parent, ofClass))
+    (false)
 _are = (tbl, ofClass)->
     for i,v in pairs(tbl) do
         if ((_is(v, ofClass)) == false) then return (false)
     (true)
-_isAncestor = (obj, ofClass)-> -- This too. Read up on the Moonscript manual. (@TODO)
-    if ((obj == nil) or (ofClass == nil)) then return (false)
-    elseif (obj.__parent != nil) then
-        if (obj.__parent.__name == ofClass.__name) then return (true)
-        elseif ((type(ofClass) == 'string') and (obj.__parent.__name == ofClass)) then return (true)
-        else return (_isAncestor(obj.__parent, ofClass))
-    (false)
 
 class Timer
     update: (dT)=>
@@ -66,8 +75,8 @@ class Timer
             if (@Looping == true) then @restart!
             return (true), (@On_Completion!)
         return (false), (@On_Update!)
-    isComplete: => ((@Remainder <= 0) and (@Looping == false))
-    restart: =>
+    isComplete:=> ((@Remainder <= 0) and (@Looping == false))
+    restart:=>
         @Remainder = @Duration
         (@)
     new: (duration, on_complete, on_update, looping=false)=>
@@ -77,26 +86,42 @@ class Timer
         (@)
 
 class Container
-    set: (item, key)=>
-        idx = ((@count!)+1)
-        if (item != nil) then @Items[idx], @Keys[idx] = item, (key or idx)
-        (@count!)
-    new: (initial)=>
+    new: =>
         @Items, @Keys = {}, {}
-        @set(initial)
         (@)
-    __call: (item, key)=> (@set(item, key))
+    count:=> (#@Keys)
+    topKey:=> (@Keys[@count!] or nil)
+    topItem:=> (@Items[@topKey!] or nil)
+    -- nextOpenKey:=>
+    --     for k,v in ipairs(@Keys)
     get: (key)=>
+        if r = @Items[key] then return (r)
+        if (@topKey! == key) then return (@topItem!)
         for k,v in pairs(@Keys) do if (v == key) then return (@Items[k] or nil)
         (nil)
     getKey: (item)=>
         for k,v in ipairs(@Items) do if (v == item) then return (@Keys[k])
         (nil)
-    count: => ((#@Keys) or 0)
-    top: => (@Items[#@Items] or nil)
+    set: (item, key)=>
+        k = _linearInsert(@Items, item)
+        if (item != nil) then @Keys[k] = (key or k)
+        (key or k)
+    __call: (item, key)=> (@set(item, key))
+    __tostring:=>
+        r = 'Container:'
+        for k,v in pairs(@Keys) do
+            r ..= "\n\t[##{k}: #{v}]->[#{@Items[k]}]"
+        (r)
+    remove: (key)=>
+        for k,v in ipairs(@Keys) do
+            if (v == key) then
+                @Items[k] = nil
+                @Keys[v] = nil
+                return (true)
+        (false)
     pop: =>
         item = @top!
-        if (item != nil) then @Items[@count!] = nil
+        if (item != nil) then @remove()
         (item or nil)
     forEach: (action)=> ({key,action(key, val) for key,val in @iterator!})
     iterator: ()=>
@@ -171,7 +196,7 @@ class Tetrad extends Dyad
         v = (math.cos(angle)*force)
         @Velocity.x += v
         @Velocity.y += v
-    __tostring: => (super.__tostring(@))..("T{#{@Velocity.x}, #{@Velocity.y}}")
+    __tostring: => ("T{#{@Velocity.x}, #{@Velocity.y}, #{super.__tostring(@)}}")
     new: (p1, p2, v1, v2)=> @set(p1, p2, v1, v2)
 
 class Hexad extends Tetrad
@@ -188,7 +213,7 @@ class Hexad extends Tetrad
         super\update(dT)
         @Rotator.value += (@Rotator.inertia*dT)
     torque: (by)=> @Rotator.inertia += tonumber(by)
-    __tostring: => (super.__tostring(@))..("H{#{@Rotator.value}, #{@Rotator.inertia}}")
+    __tostring: => ("H{#{@Rotator.value}, #{@Rotator.inertia}, #{super.__tostring(@)}}")
 
 class Octad extends Hexad
     new: (p1, p2, v1, v2, r, rv, dA, dE)=> @set(p1, p2, v1, v2, r, rV, dA, dE)
@@ -205,7 +230,7 @@ class Octad extends Hexad
     update: (dT=(1/60))=>
         super\update(dT)
         @Dimensional.address += (@Dimensional.entropy*dT)
-    __tostring: => (super.__tostring(@))..("O{#{@Dimensional.address}, #{@Dimensional.entropy}}")
+    __tostring: => ("O{#{@Dimensional.address}, #{@Dimensional.entropy}, #{super.__tostring(@)}}")
 
 class Shape
     new: (oX, oY)=> @set(oX, oY)
@@ -341,18 +366,19 @@ serialize = (obj, showIndices=false)->
             if (#obj == 0) then return ("{}") 
             serial ..= "{"
             for k,v in pairs(obj) do
-                if (showIndices) then serial ..= "[#{k}]="
+                if (showIndices == true) then serial ..= "[#{k}]="
                 serial ..= "#{serialize(v, showIndices)}, "
             serial = serial\sub(1, -3)
             serial ..= "}"
         when 'number' do serial ..= string.format('%d', obj)
         when 'string' do serial ..= string.format('%q', obj)
+        when 'function' do serial ..= "(0x#{tostring(obj)\gsub('function: ', '')\lower!})"
         else serial ..= "(#{tostring(obj)})"
     (serial)
 
 -- @return @module
 MTLibrary = { :_meta,
-    logic: { :Container, :Timer, isAncestor: _isAncestor, are: _are, is: _is},
+    logic: { :Container, :Timer, nop: _nop, isAncestor: _isAncestor, are: _are, is: _is},
     math: {
         random: (tbl)->
             if (type(tbl) == 'table') then return (tbl[math.random(#tbl)])
