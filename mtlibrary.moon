@@ -6,7 +6,7 @@ _meta = {
         major: 0,
         minor: 6,
         revision: 20,
-        codename: '☆^*;+;*^☆'
+        codename: '☆^*;=;*^☆'
     }
 }
 
@@ -38,12 +38,12 @@ _binaryInsert = (tbl, val, comparator)->
     table.insert(tbl, k, val)
     (k)
 _linearInsert = (tbl, val)->
-    for i=1, #tbl do
+    for i=1, #tbl+1 do
         if (tbl[i] == nil) then
             table.insert(tbl, i, val)
             return (i)
-    table.insert(tbl, #tbl+1, val)
-    (#tbl)
+    -- table.insert(tbl, val)
+    -- (#tbl)
 _conforms = (value, toFormat)->
     for k,v in pairs(toFormat) do if (value[k] == nil) then return (false)
     (true)
@@ -92,8 +92,6 @@ class Container
     count:=> (#@Keys)
     topKey:=> (@Keys[@count!] or nil)
     topItem:=> (@Items[@topKey!] or nil)
-    -- nextOpenKey:=>
-    --     for k,v in ipairs(@Keys)
     get: (key)=>
         if r = @Items[key] then return (r)
         if (@topKey! == key) then return (@topItem!)
@@ -110,18 +108,19 @@ class Container
     __tostring:=>
         r = 'Container:'
         for k,v in pairs(@Keys) do
-            r ..= "\n\t[##{k}: #{v}]->[#{@Items[k]}]"
+            r ..= "\n\t[#{k}: #{v}]->[#{@Items[k]}]"
         (r)
     remove: (key)=>
+        foundKey = false
         for k,v in ipairs(@Keys) do
             if (v == key) then
-                @Items[k] = nil
-                @Keys[v] = nil
+                table.remove(@Items, v)
+                table.remove(@Keys, k)
                 return (true)
         (false)
     pop: =>
         item = @top!
-        if (item != nil) then @remove()
+        if (item != nil) then @remove(@topKey)
         (item or nil)
     forEach: (action)=> ({key,action(key, val) for key,val in @iterator!})
     iterator: ()=>
