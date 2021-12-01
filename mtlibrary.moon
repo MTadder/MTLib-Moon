@@ -1,18 +1,21 @@
 _meta = {
     name: 'MTLibrary',
     author: 'MTadder',
-    date: 'Nov. 29, 2021'
+    date: 'Nov. 30, 2021'
     version: {
         major: 0,
         minor: 6,
-        revision: 20,
-        codename: '☆^*;=;*^☆'
+        revision: 22,
+        codename: '☆(^v^)☆'
     }
 }
 
 -- @logic
-_nop = ()-> (nil)
 _unpack = (unpack or table.unpack)
+_nop = ()-> (nil)
+_merge = (tbl1, tbl2)->
+    for k,v in pairs(tbl2) do if (tbl1[k] == nil) then table.insert(tbl1, k, v)
+    (tbl1)
 _binarySearch = (list, value, resolver)->
     if ((list == nil) or (value == nil)) then return (nil)
     resolver or= ((value)-> (value))
@@ -37,21 +40,12 @@ _binaryInsert = (tbl, val, comparator)->
     k = (iMid+iState)
     table.insert(tbl, k, val)
     (k)
-_linearInsert = (tbl, val)->
-    for i=1, #tbl+1 do
-        if (tbl[i] == nil) then
-            table.insert(tbl, i, val)
-            return (i)
-    -- table.insert(tbl, val)
-    -- (#tbl)
-_conforms = (value, toFormat)->
-    for k,v in pairs(toFormat) do if (value[k] == nil) then return (false)
-    (true)
-_is = (v, query)->
-    if (v != nil and query != nil) then
+_is = (v, q)->
+    if ((v != nil) and (q != nil)) then
+        if (type(v) != 'table') then return (false)
         if (v.__class != nil) then
-            if (query.__class != nil) then return (v.__class.__name == query.__class.__name)
-            return (v.__class.__name == query)
+            if (q.__class != nil) then return (v.__class.__name == q.__class.__name)
+            return (v.__class.__name == q)
     (false)
 _isAncestor = (obj, ofClass)->
     if (obj == nil or ofClass == nil) then return (false)
@@ -85,67 +79,74 @@ class Timer
         @restart!
         (@)
 
+class List
+    new: (contents)=>
+        @Content = (contents or {})
+    count: => (#@Content)
+    get: (key)=>
+        if v = @Content[key] then return (v)
+        (nil)
+    add: (item)=>
+        for i=1, (#@Content+1) do
+            if (@Content[i] == nil) then
+                @Content[i] = item
+                return (i)
+            else continue
+        (nil)
+    top: => (@Content[@count!] or nil)
+    pop: =>
+        idx = @count!
+        if v = @Content[idx] then
+            @Content[idx] = nil
+            return (v)
+        (nil)
+    remove: (key)=>
+        v = @Content[key]
+        @Content[key] = nil
+        return (v != nil)
+
 class Container
     new: =>
-        @Items, @Keys = {}, {}
+        @Items = List!
         (@)
-    count:=> (#@Keys)
-    topKey:=> (@Keys[@count!] or nil)
-    topItem:=> (@Items[@topKey!] or nil)
-    get: (key)=>
-        if r = @Items[key] then return (r)
-        if (@topKey! == key) then return (@topItem!)
-        for k,v in pairs(@Keys) do if (v == key) then return (@Items[k] or nil)
-        (nil)
+    count:=> (@Items\count! or 0)
+    get: (key)=> (@Items\get(key) or nil)
+    top:=> (@Items\top! or nil)
+    pop: => (@Items\pop! or nil)
+    __call: (item)=> @Items\add(item)
     getKey: (item)=>
-        for k,v in ipairs(@Items) do if (v == item) then return (@Keys[k])
+        for k,v in ipairs(@Items.Content) do if (v == item) then return (k)
         (nil)
-    set: (item, key)=>
-        k = _linearInsert(@Items, item)
-        if (item != nil) then @Keys[k] = (key or k)
-        (key or k)
-    __call: (item, key)=> (@set(item, key))
     __tostring:=>
-        r = 'Container:'
-        for k,v in pairs(@Keys) do
-            r ..= "\n\t[#{k}: #{v}]->[#{@Items[k]}]"
-        (r)
+        r = 'Container: ['
+        for k,v in ipairs(@Items.Content) do r ..= "\n\t[#{k}: #{v}], "
+        ("#{r} ]")
     remove: (key)=>
-        foundKey = false
-        for k,v in ipairs(@Keys) do
-            if (v == key) then
-                table.remove(@Items, v)
-                table.remove(@Keys, k)
-                return (true)
-        (false)
-    pop: =>
-        item = @top!
-        if (item != nil) then @remove(@topKey)
-        (item or nil)
-    forEach: (action)=> ({key,action(key, val) for key,val in @iterator!})
+        oldCount = @Items\count!
+        r = @Items\remove(key)
+        ((oldCount > @Items\count!) and (r == true))
+    forEach: (action)=> {k,action(k, v) for k,v in ipairs(@Items.Content)}
     iterator: ()=>
-        i, keys, items = 0, @Keys, @Items
+        i, items = 0, @Items.Content
         ()->
             i += 1
             item = items[i]
-            if (item == nil) then item = items[keys[i]]
-            elseif (item != nil) then return keys[i], item
+            if (item != nil) then return i, item
             (nil)
 
 -- @math
 _sigmoid = (x)-> (1/(1+math.exp(-x)))
-_dist = (x, y, oX, oY)-> math.abs(math.sqrt(math.pow(x-oX, 2)+math.pow(y-oY, 2)))
+_dist = (x, y, oX, oY)-> (math.abs(math.sqrt(math.pow(x-oX, 2)+math.pow(y-oY, 2))))
 _lerp = (a, b, t)-> (a+(b-a)*t)
 _isWithin = (x, y, oX, oY, lX, lY)-> ((x > oX and y < lX) and (y > oY and y < lY))
-_isWithinPie = (x, y, oX, oY, oR)-> -- @TODO
-
+_isWithinPie = (x, y, oX, oY, oR)-> (_dist(x, y, oX, oY) < oR)
 _intersects = (o1x, o1y, e1x, e1y, o2x, o2y, e2x, e2y)->
     -- adapted from https://gist.github.com/Joncom/e8e8d18ebe7fe55c3894
-    s1x, s1y = (e1x - o1x), (e1y - o1y)
-    s2x, s2y = (e2x - o2x), (e2y - o2y)
-    s = (-s1y * (o1x - o2x) + s1x * (o1y - o2y)) / (-s2x * s1y + s1x * s2y)
-    t = ( s2x * (o1y - o2y) - s2y * (o1x - o2x)) / (-s2x * s1y + s1x * s2y)
-    (s >= 0 and s <= 1 and t >= 0 and t <= 1)
+    s1x, s1y = (e1x-o1x), (e1y-o1y)
+    s2x, s2y = (e2x-o2x), (e2y-o2y)
+    s = (-s1y*(o1x-o2x)+s1x*(o1y-o2y))/(-s2x*s1y+s1x*s2y)
+    t = ( s2x*(o1y-o2y)-s2y*(o1x-o2x))/(-s2x*s1y+s1x*s2y)
+    ((s >= 0) and (s <= 1) and (t >= 0) and (t <= 1))
 
 class Dyad
     lerp: (o, t)=>
@@ -257,7 +258,6 @@ class Line extends Shape
         error!
         if (_isAncestor(o, Dyad)) then
             pX, pY = o\get!
-            
     getLength: =>
         sOX, sOY = @Origin\get!
         sEX, sEY = @Ending\get!
@@ -265,7 +265,7 @@ class Line extends Shape
     getSlope: => ((@Ending.Position.x-@Origin.Position.x)/(@Ending.Position.y-@Origin.Position.y))
     -- map: (o, x, y) => ((@getSlope!*x)-(-x))
     intersects: (o)=>
-        if _is(o, 'Dyad') then
+        if _is(o, Dyad) then
             sOX, sOY, sEX, sEY = @get!
             oPX, oPY = o\get!
             slope = @getSlope!
@@ -293,11 +293,11 @@ class Rectangle extends Shape
     diagonal: => math.sqrt(math.pow(@Limits.Position.x, 2), math.pow(@Limits.Position.y, 2))
     perimeter: => (2*(@Limits.Position.x+@Limits.Position.y))
     contains: (o)=>
-        if (_is(o, 'Dyad')) then
+        if (_is(o, Dyad)) then
             sOX, sOY, sLX, sLY = @get!
             oPX, oPY = o\get!
             return (_isWithin(oPX, oPY, sOX, sOY, sLX, sLY))
-        elseif (_is(o, 'Line')) then return (@contains(o.Origin) and @contains(o.Ending))
+        elseif (_is(o, Line)) then return (@contains(o.Origin) and @contains(o.Ending))
         elseif (_is(o, 'Rectangle')) then
             for i,l in ipairs(o\getLines!) do
                 if (@contains(l) == false) then return (false)
