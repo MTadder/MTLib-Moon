@@ -1,65 +1,41 @@
 _meta = {
     name: 'MTLibrary',
     author: 'MTadder',
-    date: 'Nov. 30, 2021'
+    date: 'December 03, 2021'
     version: {
         major: 0,
         minor: 6,
-        revision: 22,
-        codename: '☆(^v^)☆'
+        revision: 23,
+        codename: '(∩,∩)'
     }
 }
 
 -- @logic
-_unpack = (unpack or table.unpack)
 _nop =()-> (nil)
 _merge =(tbl1, tbl2)->
     for k,v in pairs(tbl2) do if (tbl1[k] == nil) then table.insert(tbl1, k, v)
     (tbl1)
-_binarySearch =(list, value, resolver)->
-    if ((list == nil) or (value == nil)) then return (nil)
-    resolver or= ((value)-> (value))
-    found, lower, upper = false, 1, #list
-    while (found == false) do
-        check = math.floor(((upper-lower)/2)+0.5)
-        if (list[check] == nil) then break
-        elseif (upper == lower) then break
-        elseif (resolver(list[check]) == value) then return (check)
-        elseif (resolver(list[check]) < value) then upper = check
-        elseif (resolver(list[check]) > value) then lower = check
-    (nil)
-_binaryInsert =(tbl, val, comparator)->
-    if ((tbl == nil) or (val == nil)) then return (nil)
-    comparator or= (a, b)-> (a < b)
-    iStart, iEnd, iMid, iState = 1, #tbl, 1, 0
-    while (iStart <= iEnd) do
-        iMid = math.floor(((iStart+iEnd)/2+0.5))
-        if comparator(val, tbl[iMid]) then
-            iEnd, iState = iMid-1, 0
-        else iStart, iState = iMid+1, 1
-    k = (iMid+iState)
-    table.insert(tbl, k, val)
-    (k)
-_is =(v, q)->
-    if ((v != nil) and (q != nil)) then
-        if (type(v) != 'table') then return (false)
-        if (v.__class != nil) then
-            if (q.__class != nil) then return (v.__class.__name == q.__class.__name)
-            return (v.__class.__name == q)
+_is =(val, ofClass)->
+    if ((val != nil) and (ofClass != nil)) then
+        if (type(val) != 'table') then return (false)
+        if (val.__class != nil) then
+            if (ofClass.__class != nil) then return (val.__class.__name == ofClass.__class.__name)
+            return (val.__class.__name == ofClass)
     (false)
-_isAncestor =(obj, ofClass)->
-    if (obj == nil or ofClass == nil) then return (false)
-    if (obj.__parent) then
+_isAncestor =(val, ofClass)->
+    if (val == nil or ofClass == nil) then return (false)
+    if (val.__parent) then
         if (type(ofClass) == 'string') then return (obj.__parent.__name == ofClass)
         if (ofClass.__class) then
-            if (obj.__parent == ofClass.__class) then return (true)
-            if (obj.__parent.__name == ofClass.__class.__name) then return (true)
-            else return (_isAncestor(obj.__parent, ofClass))
+            if (val.__parent == ofClass.__class) then return (true)
+            if (val.__parent.__name == ofClass.__class.__name) then return (true)
+            else return (_isAncestor(val.__parent, ofClass))
     (false)
-_are =(tbl, ofClass)->
-    for i,v in pairs(tbl) do
+_are =(values, ofClass)->
+    for i,v in pairs(values) do
         if ((_is(v, ofClass)) == false) then return (false)
     (true)
+_newArray =(count)-> [0 for i=1, count]
 class Timer
     update:(dT)=>
         if (love != nil) then dT or= love.timer.getDelta!
@@ -146,7 +122,7 @@ _intersects =(o1x, o1y, e1x, e1y, o2x, o2y, e2x, e2y)->
     s1x, s1y = (e1x-o1x), (e1y-o1y)
     s2x, s2y = (e2x-o2x), (e2y-o2y)
     s = (-s1y*(o1x-o2x)+s1x*(o1y-o2y))/(-s2x*s1y+s1x*s2y)
-    t = ( s2x*(o1y-o2y)-s2y*(o1x-o2x))/(-s2x*s1y+s1x*s2y)
+    t =  (s2x*(o1y-o2y)-s2y*(o1x-o2x))/(-s2x*s1y+s1x*s2y)
     ((s >= 0) and (s <= 1) and (t >= 0) and (t <= 1))
 class Dyad
     lerp:(o, d)=>
@@ -158,9 +134,8 @@ class Dyad
     equals:(o, o2)=>
         if (o == nil) then return (false)
         elseif ((type(o) != 'table') and (o2 == nil)) then return (false)
-        elseif (_is(o, 'Dyad')) then
-            return ((@Position.x == o.Position.x) and (@Position.y == o.Position.y))
-        elseif (type(o) == 'number' and (type(o2) == 'number')) then
+        elseif (_is(o, 'Dyad')) then return ((@Position.x == o.Position.x) and (@Position.y == o.Position.y))
+        elseif ((type(o2) == 'number') and (o1 != nil)) then
             return ((@Position.x == o) and (@Position.y == o2))
         (false)
     distance:(o=0, o2=0)=>
@@ -188,7 +163,7 @@ class Tetrad extends Dyad
         super\set(x, y)
         @Velocity or= {}
         @Velocity.x, @Velocity.y = tonumber(xV or 0), tonumber(yV or 0)
-    get:=> return _unpack({
+    get:=> unpack({
         @Position.x, @Position.y,
         @Velocity.x, @Velocity.y })
     update:(dT=(1/60))=>
@@ -207,7 +182,7 @@ class Hexad extends Tetrad
         super\set(x, y, xV, yV)
         @Rotator or= {}
         @Rotator.value, @Rotator.inertia = tonumber(r or 0), tonumber(rV or 0)
-    get:=> _unpack({
+    get:=> unpack({
         @Position.x, @Position.y,
         @Velocity.x, @Velocity.y,
         @Rotator.value, @Rotator.inertia })
@@ -222,7 +197,7 @@ class Octad extends Hexad
         super\set(x, y, xV, yV, r, rV)
         @Dimensional or= {}
         @Dimensional.address, @Dimensional.entropy = tonumber(dA or 0), tonumber(dE or 0)
-    get:=> return _unpack({
+    get:=> unpack({
         @Position.x, @Position.y,
         @Velocity.x, @Velocity.y,
         @Rotator.value, @Rotator.inertia,
@@ -242,18 +217,18 @@ class Circle extends Shape
         super\set(oX, oY)
         @Radius = tonumber(radi or math.pi)
     draw:(mode)=> love.graphics.circle(mode, @Origin.x, @Origin.y, @Radius)
-    __tostring:=> super.__tostring(@)..("C{#{@Radius}}")
+    __tostring:=> ("C{#{@Radius}, #{super.__tostring(@)}}")
     new:(x, y, rad)=> @set(x, y, rad)
 class Line extends Shape
     new:(oX, oY, eX, eY)=> @set(oX, oY, eX, eY)
     set:(oX, oY, eX, eY)=>
         super\set(oX, oY)
         @Ending = Dyad(eX, eY)
-    get:=> return unpack({
+    get:=> unpack({
         @Origin.Position.x, @Origin.Position.y,
         @Ending.Position.x, @Ending.Position.x })
     getDistance:(o)=>
-        error! -- @TODO
+        error! -- @TODO fix
         if (_is(o, Dyad)) then
             pX, pY = o\get!
     getLength:=>
@@ -273,21 +248,20 @@ class Line extends Shape
             if (_intersects(sOX, sOY, sEX, sEY, oOX, oOY, oEX, oEY)) then return (true)
         elseif _is(o, 'Rectangle') then
             if (o\contains(@Origin) or o\contains(@Ending)) then return (true)
-            for i,l in ipairs(o\getLines!) do
-                if (@intersects(l)) then return (true)
+            for i,l in ipairs(o\getLines!) do if (@intersects(l)) then return (true)
         (false)
-    __tostring:=> super.__tostring(@)..("-->{#{tostring(@Ending)}}")
+    __tostring:=> ("[{#{tostring(@Origin)}}-(#{@getLength!})->{#{tostring(@Ending)}}]")
 class Rectangle extends Shape
     new:(oX, oY, lX, lY)=> @set(oX, oY, lX, lY)
     set:(oX, oY, lX, lY)=>
         super\set(oX, oY)
         @Limits or= Dyad(lX, lY)
-    get:=> return unpack({
+    get:=> unpack({
         @Origin.Position.x, @Origin.Position.y,
         @Limits.Position.x, @Limits.Position.y })
     area:=> (@Limits.Position.x*@Limits.Position.y)
-    diagonal:=> math.sqrt(math.pow(@Limits.Position.x, 2), math.pow(@Limits.Position.y, 2))
-    perimeter:=> (2*(@Limits.Position.x+@Limits.Position.y))
+    perimeter:=> ((2*(@Limits.Position.x))+(2*(@Limits.Position.y)))
+    diagonal:=> math.sqrt(((@Limits.Position.x)^2)+((@Limits.Position.y)^2))
     contains:(o)=>
         if (_is(o, Dyad)) then
             sOX, sOY, sLX, sLY = @get!
