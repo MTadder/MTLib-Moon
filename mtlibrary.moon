@@ -1,20 +1,40 @@
+-- @notes
+-- ( x = x or v )
+-- ((a and b) or c) | (a and b or c)
+-- ( (x > y) and x or y )
+
+-- @meta-info
 _meta = {
     name: 'MTLibrary',
     author: 'MTadder',
-    date: 'December 03, 2021'
+    date: 'December 16, 2021',
     version: {
         major: 0,
         minor: 6,
-        revision: 23,
-        codename: '(∩,∩)'
+        revision: 26,
+        codename: '－O－'
     }
 }
-
+-- @table-extensions
+table.isArray =(tbl)-> (tbl[1] != nil)
+table.contains =(tbl, value)->
+    if table.isArray(tbl) then
+        for k,v in pairs(tbl) do if (v == value) then return (true)
+    else for k,v in ipairs(tbl) do if (v == value) then return (true)
+    (false)
+table.occurances =(tbl, value)->
+    o = 0
+    if table.isArray(tbl) then
+        for i,v in ipairs(tbl) do if (v == value) then o+=1
+    else for k,v in pairs(tbl) do if (v == value) then o+=1
+    (o)
+table.isUnique =(tbl)->
+    if table.isArray(tbl) then
+        for k,v in ipairs(tbl) do if (table.occurances(tbl, v) > 1) then return (false)
+    else for k,v in pairs(tbl) do if (table.occurances(tbl, v) > 1) then return (false)
+    (true)
 -- @logic
-_nop =()-> (nil)
-_merge =(tbl1, tbl2)->
-    for k,v in pairs(tbl2) do if (tbl1[k] == nil) then table.insert(tbl1, k, v)
-    (tbl1)
+_nop =-> (nil)
 _is =(val, ofClass)->
     if ((val != nil) and (ofClass != nil)) then
         if (type(val) != 'table') then return (false)
@@ -32,79 +52,31 @@ _isAncestor =(val, ofClass)->
             else return (_isAncestor(val.__parent, ofClass))
     (false)
 _are =(values, ofClass)->
-    for i,v in pairs(values) do
-        if ((_is(v, ofClass)) == false) then return (false)
+    for i,v in pairs(values) do if ((_is(v, ofClass)) == false) then return (false)
     (true)
 _newArray =(count)-> [0 for i=1, count]
 class Timer
     update:(dT)=>
-        if (love != nil) then dT or= love.timer.getDelta!
+        now = os.clock!
+        if (love != nil) then dT = (dT or love.timer.getDelta!)
+        else dT = (dT or (now-(@last_update or now)))
         @Remainder -= dT
+        @last_update = now
         if (@Remainder <= 0) then
             if (@Looping == true) then @restart!
-            return (true), (@On_Completion!)
-        return (false), (@On_Update!)
+            @On_Completion!
+            return (true)
+        else return (false)
     isComplete:=> ((@Remainder <= 0) and (@Looping == false))
     restart:=>
         @Remainder = @Duration
         (@)
-    new:(duration, on_complete, on_update, looping=false)=>
+    new:(duration, on_complete, looping=false)=>
         @Duration, @Looping = duration, looping
-        @On_Update, @On_Completion = (on_update or _nop), (on_complete or _nop)
+        @last_update = os.clock!
+        @On_Completion = (on_complete or _nop)
         @restart!
         (@)
-class List
-    new:(contents)=>
-        @Content = (contents or {})
-    count:=> (#@Content)
-    get:(key)=>
-        if v = @Content[key] then return (v)
-        (nil)
-    add:(item)=>
-        for i=1, (#@Content+1) do
-            if (@Content[i] == nil) then
-                @Content[i] = item
-                return (i)
-            else continue
-        (nil)
-    top:=> (@Content[@count!] or nil)
-    pop:=>
-        idx = @count!
-        if v = @Content[idx] then
-            @Content[idx] = nil
-            return (v)
-        (nil)
-    remove:(key)=>
-        v = @Content[key]
-        @Content[key] = nil
-        return (v != nil)
-class Container
-    new:=>
-        @Items = List!
-        (@)
-    count:=> (@Items\count! or 0)
-    get:(key)=> (@Items\get(key) or nil)
-    top:=> (@Items\top! or nil)
-    pop:=> (@Items\pop! or nil)
-    __call:(item)=> (@Items\add(item) or nil)
-    getKey:(item)=>
-        for k,v in ipairs(@Items.Content) do if (v == item) then return (k)
-        (nil)
-    __tostring:=>
-        r = 'Container: ['
-        for k,v in ipairs(@Items.Content) do r ..= "\n\t[#{k}: #{v}], "
-        ("#{r} ]")
-    remove:(key)=>
-        oldCount = @Items\count!
-        r = @Items\remove(key)
-        ((oldCount > @Items\count!) and (r == true))
-    iterator:=>
-        i, items = 0, @Items.Content
-        ()->
-            i += 1
-            item = items[i]
-            if (item != nil) then return i, item
-            (nil)
 -- @math
 _clamp =(v, l, u)-> math.max(l, math.min(v, u))
 _sigmoid =(x)-> (1/(1+math.exp(-x)))
@@ -125,10 +97,13 @@ _intersects =(o1x, o1y, e1x, e1y, o2x, o2y, e2x, e2y)->
     t =  (s2x*(o1y-o2y)-s2y*(o1x-o2x))/(-s2x*s1y+s1x*s2y)
     ((s >= 0) and (s <= 1) and (t >= 0) and (t <= 1))
 class Dyad
-    lerp:(o, d)=>
+    lerp:(o, d, d1)=>
         if (_is(o, 'Dyad')) then
             @Position.x = _lerp(@Position.x, o.Position.x, tonumber(d))
             @Position.y = _lerp(@Position.y, o.Position.y, tonumber(d))
+        elseif (type(o) == 'number') then
+            @Position.x = _lerp(@Position.x, o, d1)
+            @Position.x = _lerp(@Position.y, d, d1)
         (@)
     get:=> (@Position.x), (@Position.y)
     equals:(o, o2)=>
@@ -227,17 +202,14 @@ class Line extends Shape
     get:=> unpack({
         @Origin.Position.x, @Origin.Position.y,
         @Ending.Position.x, @Ending.Position.x })
-    getDistance:(o)=>
-        error! -- @TODO fix
-        if (_is(o, Dyad)) then
-            pX, pY = o\get!
+    distance:(o, o2)=> -- @TODO
     getLength:=>
         sOX, sOY = @Origin\get!
         sEX, sEY = @Ending\get!
         (math.sqrt(math.pow(sEX-sOX, 2)+math.pow(sEY-sOY, 2)))
     getSlope:=> ((@Ending.Position.x-@Origin.Position.x)/(@Ending.Position.y-@Origin.Position.y))
     intersects:(o)=>
-        if _is(o, Dyad) then
+        if _is(o, 'Dyad') then
             sOX, sOY, sEX, sEY = @get!
             oPX, oPY = o\get!
             slope = @getSlope!
@@ -263,11 +235,11 @@ class Rectangle extends Shape
     perimeter:=> ((2*(@Limits.Position.x))+(2*(@Limits.Position.y)))
     diagonal:=> math.sqrt(((@Limits.Position.x)^2)+((@Limits.Position.y)^2))
     contains:(o)=>
-        if (_is(o, Dyad)) then
+        if (_is(o, 'Dyad')) then
             sOX, sOY, sLX, sLY = @get!
             oPX, oPY = o\get!
             return (_isWithin(oPX, oPY, sOX, sOY, sLX, sLY))
-        elseif (_is(o, Line)) then return (@contains(o.Origin) and @contains(o.Ending))
+        elseif (_is(o, 'Line')) then return (@contains(o.Origin) and @contains(o.Ending))
         elseif (_is(o, 'Rectangle')) then
             for i,l in ipairs(o\getLines!) do
                 if (@contains(l) == false) then return (false)
@@ -343,7 +315,8 @@ serialize =(obj, showIndices=false)->
         else serial ..= "(#{tostring(obj)})"
     (serial)
 -- @return @module
-MTLibrary = { :_meta,
+MTLibrary = { 
+    _meta: _meta,
     logic: { :Container, :Timer, nop: _nop, isAncestor: _isAncestor, are: _are, is: _is},
     math: {
         random: (tbl)->
@@ -474,11 +447,13 @@ MTLibrary = { :_meta,
             cross:(x, y)-> 
                 factor = math.sqrt(1/(((x*x)-(y*y))*((x*x)-(y*y))))
                 (factor*x), (factor*y)
-        }
-        :Shape, shapes: { :Circle, :Line, :Rectangle, :Polygon },
+        },
+        :Shape,
+        shapes: { :Circle, :Line, :Rectangle, :Polygon },
         :Dyad, :Tetrad, :Hexad, :Octad,
-        :Vector, :Matrix, :truncate }, string: { :serialize, :split } }
--- @love @TODO
+        :Vector, :Matrix, :truncate },
+        string: { :serialize, :split } }
+-- @love
 if love then
     -- @graphics
     class Projector
@@ -487,36 +462,53 @@ if love then
         push:()=>
         pop:()=>
     class View
-    class List extends View
-    class Grid extends List
+        new:(oX, oY, w, h)=>
+            @Position = Hexad(oX, oY)
+            @Conf = { margin: 0 }
+            @Canvas = love.graphics.newCanvas(w, h)
+        configure:(param, value)=> @Conf[param] = value
+        renderTo:(func)=> @Canvas\renderTo(func)
+    class ListView extends View
+        new:()=>
+            @Conf = { marg: 0, align: 'center' }
+            @Items = {}
+    class GridView extends ListView
+        new:()=>
+            @Conf = { rows: 0, cols: 0, marg: 0 }
+            @Items = {}
     class Element
-        new:=>
-            @Pose = Hexad!
+        new:=> @Position = Hexad!
     class Label extends Element
+        new:(text)=>
+            @Text = (tostring(text) or '')
     class Button extends Element
     class Textbox extends Element
     class Picture extends Element
+        new:()=>
         draw:=>
         encode:(toFilename, fileFormat)=>
+    class Atlas extends Picture
     MTLibrary.graphics = {
-        :View, :List, :Grid, :Element, :Label,
-        :Button, :Textbox, :Picture, :Atlas
+        :View, :ListView, :GridView, :Element, :Label,
+        :Button, :Textbox, :Picture, :Atlas,
+        :Projector,
         fit:(monitorRatio=1)->
             oldW, oldH, currentFlags = love.window.getMode!
             screen, window = {}, {}
             screen.w, screen.h = love.window.getDesktopDimensions(currentFlags.display)
             newWindowWidth = truncate(screen.w / monitorRatio)
             newWindowHeight = truncate(screen.h / monitorRatio)
-            if (oldW == newWindowWidth) and (oldH == newWindowHeight) then return nil, nil
+            if ((oldW == newWindowWidth) and (oldH == newWindowHeight)) then return (nil), (nil)
             window.display, window.w = currentFlags.display, newWindowWidth
             window.h = newWindowHeight
-            window.x = truncate((screen.w*0.5)-(window.w*0.5))
-            window.y = truncate((screen.h*0.5)-(window.h*0.5))
+            window.x = math.floor((screen.w*0.5)-(window.w*0.5))
+            window.y = math.floor((screen.h*0.5)-(window.h*0.5))
             currentFlags.x, currentFlags.y = window.x, window.y
             love.window.setMode(window.w, window.h, currentFlags)
-            return screen, window
+            return (screen), (window)
         getCenter:(offset, offsetY)->
             w, h = love.graphics.getDimensions!
-            ((w-offset)*0.5), ((h-(offsetY or offset))*0.5)
+            (error!)
+            -- ((w-offset)*0.5), ((h-(offsetY or offset))*0.5)
     }
 (MTLibrary)
