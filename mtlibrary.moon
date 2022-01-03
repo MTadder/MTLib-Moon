@@ -7,16 +7,16 @@
 _meta = {
     name: 'MTLibrary',
     author: 'MTadder',
-    date: 'December 16, 2021',
+    date: 'January 3, 2022',
     version: {
         major: 0,
         minor: 6,
-        revision: 26,
-        codename: '－O－'
+        revision: 27,
+        codename: 'Orichroi'
     }
 }
 -- @table-extensions
-table.isArray =(tbl)-> (tbl[1] != nil)
+table.isArray =(tbl)-> ((tbl[1] != nil) and (type(tbl[1]) == 'number'))
 table.contains =(tbl, value)->
     if table.isArray(tbl) then
         for k,v in pairs(tbl) do if (v == value) then return (true)
@@ -259,6 +259,7 @@ class Rectangle extends Shape
             Line(sLX, sOY, sOX, sOY) })
 class Polygon extends Shape
 class Matrix
+    getDimensions:=> #@Rows, #@Cols
     __add:(Left, Right)->
     __sub:(Left, Right)->
     __div:(Left, Right)->
@@ -285,18 +286,11 @@ class Matrix
         for k, v in pairs(@) do for i, j in pairs(v) do
             if (j < found) then found = j
         (found)
-    new:(arrays)=>
-        if (type(TblOrDimensions) == 'table') then
-            for k,v in ipairs(TblOrDimensions) do table.insert(@, k, v)
-        elseif (type(TblOrDimensions) == 'number') then
-            with Dimensions = TblOrDimensions do
-                FillWith = (Lengths or 0)
-                for i=1, Dimensions do
-                    @[i] = {}
-                    if (type(FillWith) == 'number') then
-                        for j=1, Dimensions do @[i][j] = FillWith
-                    elseif (type(FillWith) == 'table') then
-                        for j,k in pairs(FillWith) do @[i][j] = k
+    new:(rows, cols, fillWith)=>
+        @Rows, @Cols = {}, {}
+        for i=1,rows do
+            for j=1,cols do
+                @Cols[i]
 -- @string
 serialize =(obj, showIndices=false)->
     serial = ''
@@ -479,8 +473,12 @@ if love then
     class Element
         new:=> @Position = Hexad!
     class Label extends Element
-        new:(text)=>
-            @Text = (tostring(text) or '')
+        new:(text, alignment='center')=>
+            @Text = (tostring(text) or 'NaV')
+            @Align = alignment
+        draw:=>
+            if (love.graphics.isActive! == false) then return (nil)
+            love.graphics.printf(@Text, @Position\get!, love.window.toPixels(#@Text))
     class Button extends Element
     class Textbox extends Element
     class Picture extends Element
