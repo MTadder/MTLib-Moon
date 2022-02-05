@@ -1,4 +1,4 @@
--- @notes
+-- @Syntax
 -- ( x = x or v )
 -- ((a and b) or c) | (a and b or c)
 -- ( (x > y) and x or y )
@@ -7,12 +7,12 @@
 _meta = {
     name: 'MTLibrary',
     author: 'MTadder',
-    date: 'January 3, 2022',
+    date: 'February 05, 2022',
     version: {
         major: 0,
         minor: 6,
-        revision: 27,
-        codename: 'Orichroi'
+        revision: 30,
+        codename: 'SNOWY EVENING'
     }
 }
 -- @table-extensions
@@ -30,9 +30,15 @@ table.occurances =(tbl, value)->
     (o)
 table.isUnique =(tbl)->
     if table.isArray(tbl) then
-        for k,v in ipairs(tbl) do if (table.occurances(tbl, v) > 1) then return (false)
-    else for k,v in pairs(tbl) do if (table.occurances(tbl, v) > 1) then return (false)
+        for k,v in ipairs(tbl) do if (table.occurances(tbl, v) != 1) then return (false)
+    else for k,v in pairs(tbl) do if (table.occurances(tbl, v) != 1) then return (false)
     (true)
+table.getDimensions =(tbl)->
+    i = 1
+    for k,v in pairs(tbl) do
+        if (type(v) == 'table') then
+
+            i+=1
 -- @logic
 _nop =-> (nil)
 _is =(val, ofClass)->
@@ -258,39 +264,6 @@ class Rectangle extends Shape
             Line(sLX, sLY, sLX, sOY),
             Line(sLX, sOY, sOX, sOY) })
 class Polygon extends Shape
-class Matrix
-    getDimensions:=> #@Rows, #@Cols
-    __add:(Left, Right)->
-    __sub:(Left, Right)->
-    __div:(Left, Right)->
-    __mul:(Left, Right)->
-    __tostring:=>
-    fill:()=>
-    dot:(VectorOrMatrix)=>
-        sum = 0
-        (sum)
-    sum:=>
-        sum = 0
-        for k,v in pairs(@) do 
-            for i,j in pairs(v) do
-                sum += j
-        (sum)
-    maximum:=>
-        found = -math.huge
-        for k,v in pairs(@) do
-            for i,j in pairs(v) do
-                if (j > found) then found = j
-        (found)
-    minimum:=>
-        found = math.huge
-        for k, v in pairs(@) do for i, j in pairs(v) do
-            if (j < found) then found = j
-        (found)
-    new:(rows, cols, fillWith)=>
-        @Rows, @Cols = {}, {}
-        for i=1,rows do
-            for j=1,cols do
-                @Cols[i]
 -- @string
 serialize =(obj, showIndices=false)->
     serial = ''
