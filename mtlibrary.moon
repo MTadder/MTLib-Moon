@@ -7,12 +7,12 @@
 _meta = {
     name: 'MTLibrary',
     author: 'MTadder',
-    date: 'February 05, 2022',
+    date: 'February 22, 2022',
     version: {
         major: 0,
         minor: 6,
-        revision: 30,
-        codename: 'SNOWY EVENING'
+        revision: 31,
+        codename: 'RAINI EVENING'
     }
 }
 -- @table-extensions
@@ -22,23 +22,20 @@ table.contains =(tbl, value)->
         for k,v in pairs(tbl) do if (v == value) then return (true)
     else for k,v in ipairs(tbl) do if (v == value) then return (true)
     (false)
-table.occurances =(tbl, value)->
+table.instances =(tbl, value)->
     o = 0
     if table.isArray(tbl) then
         for i,v in ipairs(tbl) do if (v == value) then o+=1
     else for k,v in pairs(tbl) do if (v == value) then o+=1
     (o)
+table.removeInstances = (tbl, obj)->
+    for k,v in ipairs(tbl) do if (v == obj) then table.remove(tbl, k)
 table.isUnique =(tbl)->
     if table.isArray(tbl) then
         for k,v in ipairs(tbl) do if (table.occurances(tbl, v) != 1) then return (false)
     else for k,v in pairs(tbl) do if (table.occurances(tbl, v) != 1) then return (false)
     (true)
-table.getDimensions =(tbl)->
-    i = 1
-    for k,v in pairs(tbl) do
-        if (type(v) == 'table') then
 
-            i+=1
 -- @logic
 _nop =-> (nil)
 _is =(val, ofClass)->
@@ -47,7 +44,6 @@ _is =(val, ofClass)->
         if (val.__class != nil) then
             if (ofClass.__class != nil) then return (val.__class.__name == ofClass.__class.__name)
             return (val.__class.__name == ofClass)
-    (false)
 _isAncestor =(val, ofClass)->
     if (val == nil or ofClass == nil) then return (false)
     if (val.__parent) then
@@ -57,10 +53,13 @@ _isAncestor =(val, ofClass)->
             if (val.__parent.__name == ofClass.__class.__name) then return (true)
             else return (_isAncestor(val.__parent, ofClass))
     (false)
-_are =(values, ofClass)->
-    for i,v in pairs(values) do if ((_is(v, ofClass)) == false) then return (false)
+_are =(tbl, ofClass)->
+    for i,v in pairs(tbl) do if (_is(v, ofClass) == false) then return (false)
     (true)
-_newArray =(count)-> [0 for i=1, count]
+_areAncestors =(tbl, ofClass)->
+    for i,v in pairs(tbl) do if (_isAncestor(v, ofClass) == false) then return (false)
+    (true)
+_newArray =(count, fillWith)-> [(fillWith or 0) for i=1, count]
 class Timer
     update:(dT)=>
         now = os.clock!
@@ -264,6 +263,7 @@ class Rectangle extends Shape
             Line(sLX, sLY, sLX, sOY),
             Line(sLX, sOY, sOX, sOY) })
 class Polygon extends Shape
+
 -- @string
 serialize =(obj, showIndices=false)->
     serial = ''
@@ -284,7 +284,11 @@ serialize =(obj, showIndices=false)->
 -- @return @module
 MTLibrary = { 
     _meta: _meta,
-    logic: { :Container, :Timer, nop: _nop, isAncestor: _isAncestor, are: _are, is: _is},
+    logic: {
+        :Timer, nop: _nop, newArray: _newArray,
+        is: _is, isAncestor: _isAncestor,
+        are: _are, areAncestors: _areAncestors
+    },
     math: {
         random: (tbl)->
             if (type(tbl) == 'table') then return (tbl[math.random(#tbl)])
