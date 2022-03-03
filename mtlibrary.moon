@@ -1,20 +1,16 @@
--- @Syntax
--- ( x = x or v )
--- ((a and b) or c) | (a and b or c)
--- ( (x > y) and x or y )
-
 -- @meta-info
 _meta = {
-    name: 'MTLibrary',
-    author: 'MTadder',
-    date: 'February 22, 2022',
+    name: [[MTLibrary]],
+    author: [[MTadder]],
+    date: [[March 3, 2022]],
     version: {
         major: 0,
         minor: 6,
-        revision: 31,
-        codename: 'RAINI EVENING'
+        patch: 33,
+        codename: [[namuh doog]],
     }
 }
+
 -- @table-extensions
 table.isArray =(tbl)-> ((tbl[1] != nil) and (type(tbl[1]) == 'number'))
 table.contains =(tbl, value)->
@@ -38,6 +34,9 @@ table.isUnique =(tbl)->
 
 -- @logic
 _nop =-> (nil)
+_isCallable =(val)->
+    if (type(val) == 'function') then return (true)
+    if mt = getmetatable(val) then return (mt.__call != nil)
 _is =(val, ofClass)->
     if ((val != nil) and (ofClass != nil)) then
         if (type(val) != 'table') then return (false)
@@ -82,9 +81,17 @@ class Timer
         @On_Completion = (on_complete or _nop)
         @restart!
         (@)
+
 -- @math
+__uuid = ()->
+    fn = (x)->
+        r = (math.random(16) - 1)
+        r = ((x == 'x') and (r+1) or (r%4)+9)
+        return (('0123456789abcdef')\sub(r, r))
+    return (('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx')\gsub('[xy]', fn))
 _clamp =(v, l, u)-> math.max(l, math.min(v, u))
-_sigmoid =(x)-> (1/(1+math.exp(-x)))
+_sign =(v)-> (v < 0 and -1 or 1)
+_sigmoid =(v)-> (1/(1+math.exp(-v)))
 _dist =(x, y, oX, oY)-> math.abs(math.sqrt(math.pow(x-oX, 2)+math.pow(y-oY, 2)))
 _invLerp =(a, b, d)-> ((d-a)/(b-a))
 _cerp =(a, b, d)->
@@ -265,22 +272,41 @@ class Rectangle extends Shape
 class Polygon extends Shape
 
 -- @string
-serialize =(obj, showIndices=false)->
-    serial = ''
-    switch type(obj)
-        when 'table' do
-            if (#obj == 0) then return ("{}") 
-            serial ..= "{"
-            for k,v in pairs(obj) do
-                if (showIndices == true) then serial ..= "[#{k}]="
-                serial ..= "#{serialize(v, showIndices)}, "
-            serial = serial\sub(1, -3)
-            serial ..= "}"
-        when 'number' do serial ..= string.format('%d', obj)
-        when 'string' do serial ..= string.format('%q', obj)
-        when 'function' do serial ..= "(0x#{tostring(obj)\gsub('function: ', '')\lower!})"
-        else serial ..= "(#{tostring(obj)})"
-    (serial)
+serializationTokens = {
+    ['boolean']: tostring
+    ['nil']: tostring
+    ['string']: (v)->(string.format('%q', v))
+    ['table']: (v, s)->
+        rtn = {}
+        s or= {}
+        s[v] = true
+        for k,v in pairs(v) do rtn[((#rtn)+1)] = "[#{serialize(k, s)}]: #{serialize(v, s)}"
+        s[v] = nil
+        return ("{"..table.concat(rtn, ', ').."}")
+    ['number']: (v)->
+        if (v != v) then return [[NaN]]
+        if (v == (1/0)) then return [[INF]]
+        if (v == (-1/0)) then return [[-INF]]
+        return tostring(v)
+}
+serialize =(v)-> serializationTokens[type(v)](v)
+-- serialize =(obj, showIndices=false)->
+--     serial = ''
+--     switch type(obj)
+--         when 'table' do
+--             if (#obj == 0) then return ("{}") 
+--             serial ..= "{"
+--             for k,v in pairs(obj) do
+--                 if (showIndices == true) then serial ..= "[#{k}]="
+--                 serial ..= "#{serialize(v, showIndices)}, "
+--             serial = serial\sub(1, -3)
+--             serial ..= "}"
+--         when 'number' do serial ..= string.format('%d', obj)
+--         when 'string' do serial ..= string.format('%q', obj)
+--         when 'function' do serial ..= "(0x#{tostring(obj)\gsub('function: ', '')\lower!})"
+--         else serial ..= "(#{tostring(obj)})"
+--     (serial)
+
 -- @return @module
 MTLibrary = { 
     _meta: _meta,
@@ -290,6 +316,7 @@ MTLibrary = {
         are: _are, areAncestors: _areAncestors
     },
     math: {
+        UUID: _uuid,
         random: (tbl)->
             if (type(tbl) == 'table') then return (tbl[math.random(#tbl)])
             (math.random(tonumber(tbl or 1)))
