@@ -2,12 +2,12 @@
 _meta = {
     name: [[MTLibrary]],
     author: [[MTadder]],
-    date: [[March 3, 2022]],
+    date: [[March 7, 2022]],
     version: {
         major: 0,
         minor: 6,
-        patch: 33,
-        codename: [[namuh doog]],
+        patch: 36,
+        codename: [[zkcar]],
     }
 }
 
@@ -272,24 +272,27 @@ class Rectangle extends Shape
 class Polygon extends Shape
 
 -- @string
-serializationTokens = {
-    ['boolean']: tostring
-    ['nil']: tostring
-    ['string']: (v)->(string.format('%q', v))
-    ['table']: (v, s)->
-        rtn = {}
-        s or= {}
-        s[v] = true
-        for k,v in pairs(v) do rtn[((#rtn)+1)] = "[#{serialize(k, s)}]: #{serialize(v, s)}"
-        s[v] = nil
-        return ("{"..table.concat(rtn, ', ').."}")
-    ['number']: (v)->
-        if (v != v) then return [[NaN]]
-        if (v == (1/0)) then return [[INF]]
-        if (v == (-1/0)) then return [[-INF]]
-        return tostring(v)
-}
-serialize =(v)-> serializationTokens[type(v)](v)
+serialize =(v)->
+    tokens = {
+        ['nil']: -> "nil"
+        ['boolean']: (v)-> tostring(v)
+        ['string']: (v)-> string.format('%q', v)
+        ['table']: (v, s)->
+            rtn = {}
+            s or= {}
+            s[v] = true
+            for k,v in pairs(v) do rtn[((#rtn)+1)] = "#{serialize(v, s)}"
+            s[v] = nil
+            ("{"..table.concat(rtn, ', ').."}")
+        ['number']: (v)->
+            if (v != v) then return [[NaN]]
+            if (v == (1/0)) then return [[INF]]
+            if (v == (-1/0)) then return [[-INF]]
+            tostring(v)
+    }
+    (tokens[type(v)](v))
+--serializationTokens[type(v)](v)
+
 -- serialize =(obj, showIndices=false)->
 --     serial = ''
 --     switch type(obj)
