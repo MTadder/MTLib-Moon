@@ -2,12 +2,12 @@
 _meta = {
     name: [[MTLibrary]],
     author: [[MTadder]],
-    date: [[March 7, 2022]],
+    date: [[March 16, 2022]],
     version: {
         major: 0,
         minor: 6,
-        patch: 36,
-        codename: [[zkcar]],
+        patch: 39,
+        codename: [[Bounded]]
     }
 }
 
@@ -20,11 +20,10 @@ table.contains =(tbl, value)->
     (false)
 table.instances =(tbl, value)->
     o = 0
-    if table.isArray(tbl) then
-        for i,v in ipairs(tbl) do if (v == value) then o+=1
+    if table.isArray(tbl) then for i,v in ipairs(tbl) do if (v == value) then o+=1
     else for k,v in pairs(tbl) do if (v == value) then o+=1
     (o)
-table.removeInstances = (tbl, obj)->
+table.removeInstances =(tbl, obj)->
     for k,v in ipairs(tbl) do if (v == obj) then table.remove(tbl, k)
 table.isUnique =(tbl)->
     if table.isArray(tbl) then
@@ -59,6 +58,7 @@ _areAncestors =(tbl, ofClass)->
     for i,v in pairs(tbl) do if (_isAncestor(v, ofClass) == false) then return (false)
     (true)
 _newArray =(count, fillWith)-> [(fillWith or 0) for i=1, count]
+
 class Timer
     update:(dT)=>
         now = os.clock!
@@ -83,24 +83,30 @@ class Timer
         (@)
 
 -- @math
-__uuid = ()->
-    fn = (x)->
-        r = (math.random(16) - 1)
+_uuid =->
+    fn =(x)->
+        r = (math.random(16)-1)
         r = ((x == 'x') and (r+1) or (r%4)+9)
-        return (('0123456789abcdef')\sub(r, r))
-    return (('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx')\gsub('[xy]', fn))
-_clamp =(v, l, u)-> math.max(l, math.min(v, u))
+        return ("0123456789abcdef"\sub(r, r))
+    return ("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"\gsub("[xy]", fn))
+_clamp =(v, l=0, u=1)-> math.max(l, math.min(v, u))
 _sign =(v)-> (v < 0 and -1 or 1)
 _sigmoid =(v)-> (1/(1+math.exp(-v)))
-_dist =(x, y, oX, oY)-> math.abs(math.sqrt(math.pow(x-oX, 2)+math.pow(y-oY, 2)))
+_dist =(x, y, x2, y2)-> math.abs(math.sqrt(math.pow(x2-x, 2)+math.pow(y2-y, 2)))
+_angleBetween =(x, y, x2, y2)-> math.abs(math.atan2(y2-y,x2-x))
 _invLerp =(a, b, d)-> ((d-a)/(b-a))
 _cerp =(a, b, d)->
     pi = (math.pi or 3.1415)
     f = (1-math.cos(d*pi)*0.5)
     (a*(1-f)+(b*f))
-_lerp =(a, b, d)-> (a+(b-a)*d)
-_isWithin =(x, y, oX, oY, lX, lY)-> ((x > oX and y < lX) and (y > oY and y < lY))
-_isWithinPie =(x, y, oX, oY, oR)-> (_dist(x, y, oX, oY) < oR)
+_lerp =(a, b, d)-> (a+(b-a)*_clamp(d)) -- (a*(1-d)+b*d) -- a + (b - a) * clamp(amount, 0, 1)
+_smooth =(a, b, d)->
+    t = _clamp(d)
+    m = t*t*(3-2*t)
+    (a+(b-a)*m)
+_pingPong =(x)-> (1-math.abs(1-x%2))
+_isWithinRegion =(x, y, oX, oY, lX, lY)-> ((x > oX and y < lX) and (y > oY and y < lY))
+_isWithinCircle =(x, y, oX, oY, oR)-> (_dist(x, y, oX, oY) < oR)
 _intersects =(o1x, o1y, e1x, e1y, o2x, o2y, e2x, e2y)->
     -- adapted from https://gist.github.com/Joncom/e8e8d18ebe7fe55c3894
     s1x, s1y = (e1x-o1x), (e1y-o1y)
@@ -250,7 +256,7 @@ class Rectangle extends Shape
         if (_is(o, 'Dyad')) then
             sOX, sOY, sLX, sLY = @get!
             oPX, oPY = o\get!
-            return (_isWithin(oPX, oPY, sOX, sOY, sLX, sLY))
+            return (_isWithinRegion(oPX, oPY, sOX, sOY, sLX, sLY))
         elseif (_is(o, 'Line')) then return (@contains(o.Origin) and @contains(o.Ending))
         elseif (_is(o, 'Rectangle')) then
             for i,l in ipairs(o\getLines!) do
@@ -274,41 +280,23 @@ class Polygon extends Shape
 -- @string
 serialize =(v)->
     tokens = {
-        ['nil']: -> "nil"
-        ['boolean']: (v)-> tostring(v)
-        ['string']: (v)-> string.format('%q', v)
-        ['table']: (v, s)->
+        ['nil']:-> 'nil'
+        ['boolean']:(v)-> tostring(v)
+        ['string']:(v)-> string.format('%q', v)
+        ['table']:(v, s)->
             rtn = {}
             s or= {}
             s[v] = true
             for k,v in pairs(v) do rtn[((#rtn)+1)] = "#{serialize(v, s)}"
             s[v] = nil
             ("{"..table.concat(rtn, ', ').."}")
-        ['number']: (v)->
+        ['number']:(v)->
             if (v != v) then return [[NaN]]
             if (v == (1/0)) then return [[INF]]
             if (v == (-1/0)) then return [[-INF]]
             tostring(v)
     }
     (tokens[type(v)](v))
---serializationTokens[type(v)](v)
-
--- serialize =(obj, showIndices=false)->
---     serial = ''
---     switch type(obj)
---         when 'table' do
---             if (#obj == 0) then return ("{}") 
---             serial ..= "{"
---             for k,v in pairs(obj) do
---                 if (showIndices == true) then serial ..= "[#{k}]="
---                 serial ..= "#{serialize(v, showIndices)}, "
---             serial = serial\sub(1, -3)
---             serial ..= "}"
---         when 'number' do serial ..= string.format('%d', obj)
---         when 'string' do serial ..= string.format('%q', obj)
---         when 'function' do serial ..= "(0x#{tostring(obj)\gsub('function: ', '')\lower!})"
---         else serial ..= "(#{tostring(obj)})"
---     (serial)
 
 -- @return @module
 MTLibrary = { 
@@ -458,10 +446,10 @@ MTLibrary = {
 if love then
     -- @graphics
     class Projector
-        new:()=>
-        setup:()=>
-        push:()=>
-        pop:()=>
+        new:=>
+        setup:=>
+        push:=>
+        pop:=>
     class View
         new:(oX, oY, w, h)=>
             @Position = Hexad(oX, oY)
@@ -470,11 +458,11 @@ if love then
         configure:(param, value)=> @Conf[param] = value
         renderTo:(func)=> @Canvas\renderTo(func)
     class ListView extends View
-        new:()=>
+        new:=>
             @Conf = { marg: 0, align: 'center' }
             @Items = {}
     class GridView extends ListView
-        new:()=>
+        new:=>
             @Conf = { rows: 0, cols: 0, marg: 0 }
             @Items = {}
     class Element
