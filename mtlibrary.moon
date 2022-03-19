@@ -2,12 +2,12 @@
 _meta = {
     name: [[MTLibrary]],
     author: [[MTadder]],
-    date: [[March 16, 2022]],
+    date: [[March 19, 2022]],
     version: {
         major: 0,
         minor: 6,
-        patch: 39,
-        codename: [[Bounded]]
+        patch: 41,
+        codename: [[Unbounded Potentiality]]
     }
 }
 
@@ -58,7 +58,28 @@ _areAncestors =(tbl, ofClass)->
     for i,v in pairs(tbl) do if (_isAncestor(v, ofClass) == false) then return (false)
     (true)
 _newArray =(count, fillWith)-> [(fillWith or 0) for i=1, count]
+_newArray =(count, fillWith)-> [(fillWith or 0) for i=1, count]
 
+class List
+    new:(ofItems)=>
+        @Items = {}
+        @Keys = {}
+    contains:(item)=>
+        for v in @iterator! do
+            if (v == item) then return true
+        false
+    push:(item, toKey)=>
+        keyIdx = tonumber(#@Items+1)
+        table.insert(@Keys, tostring(toKey or keyIdx), keyIdx)
+        table.insert(@Items, item)
+    pop:(atKey)=> table.remove(@Items, @Keys[atKey] or #@Items)
+    iterator:=>
+        i = 0
+        len = (#@Items or 0)
+        return ->
+            i += 1
+            if (i <= len) then return @Items[@Keys[i]]
+            return nil
 class Timer
     update:(dT)=>
         now = os.clock!
