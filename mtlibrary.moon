@@ -2,40 +2,33 @@
 _meta = {
     name: [[MTLibrary]],
     author: [[MTadder]],
-    date: [[March 19, 2022]],
+    date: [[April 1, 2022]],
     version: {
         major: 0,
         minor: 6,
-        patch: 41,
-        codename: [[Unbounded Potentiality]]
+        patch: 42,
+        codename: [[taey izt sklounst]]
     }
 }
 
--- @table-extensions
-table.isArray =(tbl)-> ((tbl[1] != nil) and (type(tbl[1]) == 'number'))
-table.contains =(tbl, value)->
-    if table.isArray(tbl) then
-        for k,v in pairs(tbl) do if (v == value) then return (true)
-    else for k,v in ipairs(tbl) do if (v == value) then return (true)
-    (false)
-table.instances =(tbl, value)->
-    o = 0
-    if table.isArray(tbl) then for i,v in ipairs(tbl) do if (v == value) then o+=1
-    else for k,v in pairs(tbl) do if (v == value) then o+=1
-    (o)
-table.removeInstances =(tbl, obj)->
-    for k,v in ipairs(tbl) do if (v == obj) then table.remove(tbl, k)
-table.isUnique =(tbl)->
-    if table.isArray(tbl) then
-        for k,v in ipairs(tbl) do if (table.occurances(tbl, v) != 1) then return (false)
-    else for k,v in pairs(tbl) do if (table.occurances(tbl, v) != 1) then return (false)
-    (true)
-
 -- @logic
 _nop =-> (nil)
-_isCallable =(val)->
-    if (type(val) == 'function') then return (true)
-    if mt = getmetatable(val) then return (mt.__call != nil)
+_isCallable =(obj)->
+    if (type(obj) == 'function') then return (true)
+    if mt = getmetatable(obj) then return (mt.__call != nil)
+    (false)
+_copy =(obj)->
+    if (type(obj) != 'table') then return (obj)
+    c = {}
+    for k,v in pairs(obj) do c[_copy(k)] = _copy(v)
+    (setmetatable(c, getmetatable(obj)))
+_combine =(t1, t2)->
+    if ((t1 == nil) or (t2 == nil)) then return ((t1 or t2) or nil)
+    if ((type(t1) == 'table') and type(t1) == type(t2)) then
+        r = _copy(t1)
+        for k,v in pairs(t2) do r[k] = v
+        return r
+    else return (t1 + t2)
 _is =(val, ofClass)->
     if ((val != nil) and (ofClass != nil)) then
         if (type(val) != 'table') then return (false)
@@ -58,7 +51,26 @@ _areAncestors =(tbl, ofClass)->
     for i,v in pairs(tbl) do if (_isAncestor(v, ofClass) == false) then return (false)
     (true)
 _newArray =(count, fillWith)-> [(fillWith or 0) for i=1, count]
-_newArray =(count, fillWith)-> [(fillWith or 0) for i=1, count]
+
+-- @table-extensions (DO NOT DO THIS) [[ make these fucntions be a part of the List class ]]
+-- table.isArray =(tbl)-> ((tbl[1] != nil) and (type(tbl[1]) == 'number'))
+-- table.contains =(tbl, value)->
+--     if table.isArray(tbl) then
+--         for k,v in pairs(tbl) do if (v == value) then return (true)
+--     else for k,v in ipairs(tbl) do if (v == value) then return (true)
+--     (false)
+-- table.instances =(tbl, value)->
+--     o = 0
+--     if table.isArray(tbl) then for i,v in ipairs(tbl) do if (v == value) then o+=1
+--     else for k,v in pairs(tbl) do if (v == value) then o+=1
+--     (o)
+-- table.removeInstances =(tbl, obj)->
+--     for k,v in ipairs(tbl) do if (v == obj) then table.remove(tbl, k)
+-- table.isUnique =(tbl)->
+--     if table.isArray(tbl) then
+--         for k,v in ipairs(tbl) do if (table.occurances(tbl, v) != 1) then return (false)
+--     else for k,v in pairs(tbl) do if (table.occurances(tbl, v) != 1) then return (false)
+--     (true)
 
 class List
     new:(ofItems)=>
