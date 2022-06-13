@@ -1,31 +1,36 @@
 ## Lua MTLibrary
-*logic and utility-focused lua classes written in [Moonscript](https://github.com/leafo/moonscript) [with bindings for [LÖVE2D](https://github.com/love2d/love)]*
+*logic and utility-focused classes written in [Moonscript](https://github.com/leafo/moonscript) [with bindings for [LÖVE2D](https://github.com/love2d/love)]*
 
-[![Badge](https://img.shields.io/badge/v-0.60.31-informational)](https://shields.io)
+[![Badge](https://img.shields.io/badge/v-0.61.34-informational)](https://shields.io)
 
 ![Logo](MTLibrary_Lua.png "MTLibrary:Lua")
 
 ## Module Contents
-`table.`
-- `isArray` : `function(tbl)`
-- `contains` : `function(tbl, obj)`
-- `instances` : `function(tbl, obj)`
-- `removeInstances` : `function(tbl, obj)`
-- `isUnique` : `function(tbl)`
-
 `MTLibrary.`
 - `logic.`
-  - `Timer` : `class`
-    - `new` : `function(duration, onComplete, loop)`
-    - `update` : `function(dT)`
-    - `restart` : `function()`
-    - `isComplete` : `function()`
   - `nop` : `function()`
+  - `isCallable` : `function(val)`
+  - `copy` : `function(val)`
+  - `combine` : `function(t1, t2)`
   - `newArray` : `function(count, fillWith)`
   - `is` : `function(val, ofClass)`
   - `isAncestor` : `val, ofClass`
   - `are` : `function(tbl, ofClass)`
   - `areAncestors` : `function(tbl, ofClass)`
+  - `Timer` : `class`
+    - `new` : `function(duration, onComplete, loop)`
+    - `update` : `function(dT)`
+    - `restart` : `function()`
+    - `isComplete` : `function()`
+  - `List` : `class`
+    - `contains` : `function(val[, atKey])`
+    - `forEach` : `function(val[, atKey])`
+    - `remove` : `function(val)`
+    - `removeAt` : `function(idx)`
+    - `flatten` : `function()`
+    - `push` : `function(val[, toKey])`
+    - `pop` : `function()`
+    - `top` : `function()`
 - `math.`
   - `sigmoid` : `function(x)`
     > returns `(1 / (1 + math.exp(-x)))`

@@ -1,14 +1,9 @@
 -- @meta-info
 _meta = {
-    name: [[MTLibrary]],
-    author: [[MTadder]],
-    date: [[April 1, 2022]],
-    version: {
-        major: 0,
-        minor: 6,
-        patch: 42,
-        codename: [[taey izt sklounst]]
-    }
+    name: 'MTLibrary',
+    author: 'MTadder',
+    date: 'June 12, 2022',
+    version: { 0, 61, 34, 'OTP' }
 }
 
 -- @logic
@@ -19,6 +14,7 @@ _isCallable =(obj)->
     (false)
 _copy =(obj)->
     if (type(obj) != 'table') then return (obj)
+    if (#obj == 0) then return ({})
     c = {}
     for k,v in pairs(obj) do c[_copy(k)] = _copy(v)
     (setmetatable(c, getmetatable(obj)))
@@ -50,48 +46,99 @@ _are =(tbl, ofClass)->
 _areAncestors =(tbl, ofClass)->
     for i,v in pairs(tbl) do if (_isAncestor(v, ofClass) == false) then return (false)
     (true)
-_newArray =(count, fillWith)-> [(fillWith or 0) for i=1, count]
+_newArray =(count, fillWith)-> ([(fillWith or 0) for i=1, count])
 
--- @table-extensions (DO NOT DO THIS) [[ make these fucntions be a part of the List class ]]
--- table.isArray =(tbl)-> ((tbl[1] != nil) and (type(tbl[1]) == 'number'))
--- table.contains =(tbl, value)->
---     if table.isArray(tbl) then
---         for k,v in pairs(tbl) do if (v == value) then return (true)
---     else for k,v in ipairs(tbl) do if (v == value) then return (true)
---     (false)
--- table.instances =(tbl, value)->
---     o = 0
---     if table.isArray(tbl) then for i,v in ipairs(tbl) do if (v == value) then o+=1
---     else for k,v in pairs(tbl) do if (v == value) then o+=1
---     (o)
--- table.removeInstances =(tbl, obj)->
---     for k,v in ipairs(tbl) do if (v == obj) then table.remove(tbl, k)
--- table.isUnique =(tbl)->
---     if table.isArray(tbl) then
---         for k,v in ipairs(tbl) do if (table.occurances(tbl, v) != 1) then return (false)
---     else for k,v in pairs(tbl) do if (table.occurances(tbl, v) != 1) then return (false)
---     (true)
+-- @string
+_getAddress =(f, l)->
+    if ((l == nil) and (type(f) == 'function')) then l = true
+    return ("#{((l and '0x') or '')}#{(tostring(f)\gsub('%a*:%s*0?', '')\upper!)}")
+_serialize =(v)->
+    tokens = {
+        ['nil']:-> ('nil')
+        ['boolean']:(b)-> ("#{b}"\lower!)
+        ['string']:(s)-> string.format('%q', s)
+        ['userdata']:(u)-> ("UserData @ #{_getAddress(u)}")
+        ['function']:(f)-> ("Function @ #{_getAddress(f)}")
+        ['thread']:(t)-> ("Thread @ #{_getAddress(t)}")
+        ['number']:(n)->
+            huge = (math.huge or (1/0))
+            if (n != n) then return ('NaN')
+            if (n == huge) then return ('INF')
+            if (n > huge) then return ('INF+')
+            if (n == -huge) then return ('-INF')
+            if (n > 9999) then return ("0x#{string.format("%x", n)\upper!}")
+            else return (string.format('%d', n))
+        ['table']:(t, s={})->
+            rtn = {}
+            s[t] = true
+            for k,m in pairs(t) do
+                if (s[m] == true) then
+                    rtn[((#rtn)+1)] = "..."
+                else
+                    rtn[((#rtn)+1)] = "#{_serialize(m, s)}"
+            s[t] = nil
+            return ("{#{table.concat(rtn, ', ')}}")
+    }
+    return (tokens[type(v)](v))
 
 class List
     new:(ofItems)=>
-        @Items = {}
-        @Keys = {}
-    contains:(item)=>
-        for v in @iterator! do
-            if (v == item) then return true
-        false
+        @Items = _copy(ofItems or {})
+    combine:(withTbl)=>
+        if (type(ofItems) == 'table') then
+            for k,v in pairs(withTbl) do @push(v, k)
+    __tostring:=> _serialize(@Items, ', ')
+    __add:(v1, v2)->
+        if (type(v1) != 'table') then return (v2\push(v1))
+        elseif (type(v2) != 'table') then return (v1\push(v2))
+        if (v1.__name == 'List') then
+            if (v2.__name == 'List') then
+                for k,v in pairs(v2.Items) do v1\push(v, k)
+                return (v1)
+            else
+                v2L = List(v2)
+                return (v1 + v2L)
+        elseif (v2.__name == 'List') then
+            v1L = List(v1)
+            return (v1L + v2)
+        (nil)
+    contains:(value, atKey)=>
+        if (atKey != nil) then
+            if v = @Items[atKey] then
+                return (value == v)
+        else for k,v in pairs(@Items) do
+            if (v == value) then return (true)
+        (false)
+    removeAt:(idx)=>
+        @Items[idx] = nil
+        (true)
+    remove:(item)=>
+        for k,v in pairs(@Items) do
+            if (v == item) then
+                @Items[k] = nil
+                return (true)
+        (false)
+    forEach:(doFunc, iterations=1)=>
+        for k,v in pairs(@Items) do
+            for i=1, iterations do
+                @Items[k] = (doFunc(v, i, k) or v)
+        (nil)
     push:(item, toKey)=>
-        keyIdx = tonumber(#@Items+1)
-        table.insert(@Keys, tostring(toKey or keyIdx), keyIdx)
-        table.insert(@Items, item)
-    pop:(atKey)=> table.remove(@Items, @Keys[atKey] or #@Items)
-    iterator:=>
-        i = 0
-        len = (#@Items or 0)
-        return ->
-            i += 1
-            if (i <= len) then return @Items[@Keys[i]]
-            return nil
+        k = (tonumber(toKey) or (#@Items+1))
+        table.insert(@Items, k, item)
+        return (@Items[k] == item)
+    flatten:=>
+        stck = {}
+        fT = {}
+        conflictors = {}
+        enter=(t, s={})->
+        for k,v in pairs(@Items) do
+            if (type(v) == 'table') then
+                enter(v, s)
+        return (fT)
+
+    top:=> (@Items[#@Items])
+    pop:(atKey)=> table.remove(@Items, (atKey or #@Items))
 class Timer
     update:(dT)=>
         now = os.clock!
@@ -103,7 +150,7 @@ class Timer
             if (@Looping == true) then @restart!
             @On_Completion!
             return (true)
-        else return (false)
+        (false)
     isComplete:=> ((@Remainder <= 0) and (@Looping == false))
     restart:=>
         @Remainder = @Duration
@@ -310,32 +357,15 @@ class Rectangle extends Shape
             Line(sLX, sOY, sOX, sOY) })
 class Polygon extends Shape
 
--- @string
-serialize =(v)->
-    tokens = {
-        ['nil']:-> 'nil'
-        ['boolean']:(v)-> tostring(v)
-        ['string']:(v)-> string.format('%q', v)
-        ['table']:(v, s)->
-            rtn = {}
-            s or= {}
-            s[v] = true
-            for k,v in pairs(v) do rtn[((#rtn)+1)] = "#{serialize(v, s)}"
-            s[v] = nil
-            ("{"..table.concat(rtn, ', ').."}")
-        ['number']:(v)->
-            if (v != v) then return [[NaN]]
-            if (v == (1/0)) then return [[INF]]
-            if (v == (-1/0)) then return [[-INF]]
-            tostring(v)
-    }
-    (tokens[type(v)](v))
-
 -- @return @module
 MTLibrary = { 
     _meta: _meta,
     logic: {
-        :Timer, nop: _nop, newArray: _newArray,
+        :Timer, :List,
+        nop: _nop,
+        copy: _copy, combine: _combine,
+        newArray: _newArray,
+        isCallable: _isCallable,
         is: _is, isAncestor: _isAncestor,
         are: _are, areAncestors: _areAncestors
     },
@@ -470,19 +500,34 @@ MTLibrary = {
                 factor = math.sqrt(1/(((x*x)-(y*y))*((x*x)-(y*y))))
                 (factor*x), (factor*y)
         },
-        :Shape,
-        shapes: { :Circle, :Line, :Rectangle, :Polygon },
         :Dyad, :Tetrad, :Hexad, :Octad,
-        :Vector, :Matrix, :truncate },
-        string: { :serialize, :split } }
+        :Shape, shapes: { :Circle, :Line, :Rectangle, :Polygon },
+    },
+    string: {
+        serialize: _serialize,
+        getAddress: _getAddress
+    },
+    authy: {
+        _nop!
+    },
+    generative: {
+        
+    }
+}
 -- @love
 if love then
     -- @graphics
+    class ShaderCode -- Uses LOVE2D-Standard GLSL ES Shader Syntax
+        new:(src)=>
+        validate:=>
+            assert(love, '')
     class Projector
         new:=>
         setup:=>
         push:=>
         pop:=>
+            if (love ~= nil) then
+                love.graphics.pop!
     class View
         new:(oX, oY, w, h)=>
             @Position = Hexad(oX, oY)
@@ -518,6 +563,10 @@ if love then
         :View, :ListView, :GridView, :Element, :Label,
         :Button, :Textbox, :Picture, :Atlas,
         :Projector,
+        patternColorizer:(str, colors)->
+            -- if (type(str) == 'string') and (type(colors) == 'table') then
+                
+            return (nil)
         fit:(monitorRatio=1)->
             oldW, oldH, currentFlags = love.window.getMode!
             screen, window = {}, {}
