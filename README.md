@@ -1,11 +1,10 @@
 ## Lua MTLibrary
 *logic and utility-focused classes written in [Moonscript](https://github.com/leafo/moonscript) [with bindings for [LÖVE2D](https://github.com/love2d/love)]*
 
-[![Badge](https://img.shields.io/badge/v-0.61.34-informational)](https://shields.io)
-
 ![Logo](MTLibrary_Lua.png "MTLibrary:Lua")
 
-## Module Contents
+## Module Contents (TODO)
+*NOTE: these may be innaccurate*
 `MTLibrary.`
 - `logic.`
   - `nop` : `function()`
