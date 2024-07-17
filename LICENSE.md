@@ -1,8 +1,8 @@
 # DON'T BE A DICK PUBLIC LICENSE
 
-> Version 1.1, December 2016
+> Version 1.3, July 2024
 
-> Copyright (C) 2024 MTadder
+> Copyright (C) 2024 Ayden G.W. (MTadder)
 
 Everyone is permitted to copy and distribute verbatim or modified
 copies of this license document.
