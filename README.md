@@ -1,4 +1,4 @@
-<center><img src="MTLibrary_Lua.png" width=128 height=128></center>
+<center><img src="MTLibrary_Lua.ico" width=128 height=128></center>
 
 ###### General-purpose library written in [Moonscript](https://github.com/leafo/moonscript) [with bindings for [LÖVE2D](https://github.com/love2d/love)]
 ---
