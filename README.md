@@ -1,8 +1,17 @@
-## Lua MTLibrary
-*logic and utility-focused classes written in [Moonscript](https://github.com/leafo/moonscript) [with bindings for [LÖVE2D](https://github.com/love2d/love)]*
+<center><img src="MTLibrary_Lua.png" width=128 height=128></center>
 
-## Module Contents (TODO)
-*NOTE: these may be innaccurate*
+###### General-purpose library written in [Moonscript](https://github.com/leafo/moonscript) [with bindings for [LÖVE2D](https://github.com/love2d/love)]
+---
+![GitHub last commit](https://img.shields.io/github/last-commit/MTadder/MTLib-Moon?style=flat-square)
+![GitHub Tag](https://img.shields.io/github/v/tag/MTadder/MTLib-Moon?style=flat-square)
+![GitHub Repo code size in bytes](https://img.shields.io/github/languages/code-size/MTadder/MTLib-Moon?style=flat-square)
+![GitHub Repo size](https://img.shields.io/github/repo-size/MTadder/MTLib-Moon?style=flat-square)
+![GitHub Repo forks](https://img.shields.io/github/forks/MTadder/MTLib-Moon?style=flat-square)
+![GitHub Repo stars](https://img.shields.io/github/stars/MTadder/MTLib-Moon?style=flat-square)
+
+---
+# Module Definition
+###### some of these entries may be innaccurate!
 ---
 `MTLibrary.`
 - `logic.`
@@ -119,5 +128,3 @@ if `love` is `not nil`, everything below is also included in the *Module*
     > returns the screen's size, and the window's size
   - `getCenter` : `function()`
     > returns the X, and Y coordinates of the screen center
-
-  Lots to do, still
