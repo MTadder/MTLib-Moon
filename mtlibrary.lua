@@ -1,12 +1,12 @@
 local _meta = {
   name = 'MTLibrary',
   author = 'MTadder',
-  date = 'April 11th, 2024',
+  date = 'July 27th, 2024',
   version = {
     0,
-    63,
-    39,
-    'GoHome'
+    6,
+    41,
+    'influxion thinglet'
   }
 }
 local _nop
