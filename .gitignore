@@ -1,1 +1,4 @@
 *.png
+*.lua
+mtlib/*.lua
+test.moon
