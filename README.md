@@ -16,7 +16,7 @@
 ---
 use the following snippet to explore the module!
 ```moonscript
-  import p from require("moon.all")
-  p require("mtlib") -- prints the module
+import p from require("moon.all")
+p require("mtlib") -- prints the module
 
 ```
