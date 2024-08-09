@@ -14,3 +14,7 @@ moon:
 test: clean moon
 	@ moonc test.moon
 	@ lua test.lua
+
+debug:
+	@ moonc debug.moon
+	@ lua debug.lua
