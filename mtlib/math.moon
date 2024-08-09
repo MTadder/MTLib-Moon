@@ -50,7 +50,6 @@ class Dyad
 		if isInstanceOf(o, 'Dyad') then
 			return @distance(o.Position.x, o.Position.y)
 		(nil)
-	__tostring:=> ("D{#{@Position.x}, #{@Position.y}}")
 	set: (x, y)=>
 		@Position or= {}
 		@Position.x, @Position.y = tonumber(x or 0), tonumber(y or 0)
@@ -79,7 +78,6 @@ class Tetrad extends Dyad
 		v = (math.cos(angle)*force)
 		@Velocity.x += v
 		@Velocity.y += v
-	__tostring:=> ("T{#{@Velocity.x}, #{@Velocity.y}, #{super.__tostring(@)}}")
 	__call: (x, y, xV, yV)=>
 		@set(x, y, xV, yV)
 		(@)
@@ -102,7 +100,6 @@ class Hexad extends Tetrad
 	torque: (by)=>
 		@Rotator.inertia += tonumber(by)
 		(@)
-	__tostring:=> ("H{#{@Rotator.value}, #{@Rotator.inertia}, #{super.__tostring(@)}}")
 class Octad extends Hexad
 	new: (x, y, xV, yV, r, rV, dA, dE)=> (@set(x, y, xV, yV, r, rV, dA, dE))
 	set: (x, y, xV, yV, r, rV, dA, dE)=>
@@ -120,7 +117,6 @@ class Octad extends Hexad
 		super\update(dT)
 		@Dimensional.address += (@Dimensional.entropy*dT)
 		(@)
-	__tostring:=> ("O{#{@Dimensional.address}, #{@Dimensional.entropy}, #{super.__tostring(@)}}")
 class Shape
 	new: (oX, oY)=>
         error!
@@ -128,7 +124,6 @@ class Shape
 	set: (oX, oY)=>
 		@Origin or= Dyad(tonumber(oX or 0), tonumber(oY or 0))
 		(@)
-	__tostring:=> ("S{#{tostring(@Origin)}}")
 class Circle extends Shape
 	set: (oX, oY, radi)=>
 		super\set(oX, oY)
@@ -139,7 +134,6 @@ class Circle extends Shape
 		if (love == nil) then error('missing LOVE2D!')
 		love.graphics.circle(mode, @Origin.x, @Origin.y, @Radius)
 		(@)
-	__tostring:=> ("C{#{@Radius}, #{super.__tostring(@)}}")
 	new: (x, y, rad)=> (@set(x, y, rad))
 class Line extends Shape
 	new: (oX, oY, eX, eY)=> (@set(oX, oY, eX, eY))
@@ -169,7 +163,6 @@ class Line extends Shape
 		-- elseif isInstanceOf(o, 'Rectangle') then
 		-- 	if (o\contains(@Origin) or o\contains(@Ending)) then return (true)
 		-- 	for i,l in ipairs(o\getLines!) do if (@intersects(l)) then return (true)
-	__tostring:=> ("[{#{tostring(@Origin)}}-(#{@getLength!})->{#{tostring(@Ending)}}]")
 class Rectangle extends Shape
 	new: (oX, oY, lX, lY)=> (@set(oX, oY, lX, lY))
 	set: (oX, oY, lX, lY)=>
