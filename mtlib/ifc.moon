@@ -144,5 +144,38 @@ cross =(x, y)->
 	return (factor*x), (factor*y)
 
 {
-     :cross
+     transformers: {
+		:cross
+	 	:sin
+	 	:sphere
+	 	:swirl
+	 	:horseshoe
+	 	:polar
+	 	:handkerchief
+		:heart
+		:disc
+		:spiral
+		:hyperbolic
+		:diamond
+		:ex
+		:julia
+		:bent
+		:waves
+		:fisheye
+		:eyefish
+		:popcorn
+		:power
+		:cosine
+		:rings
+		:fan
+		:blob
+		:pdj
+		:bubble
+		:cylinder
+		:perspective
+		:noise
+		:curl
+		:rectangles
+		:tangent
+	 }
 }
