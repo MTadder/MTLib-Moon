@@ -103,7 +103,3 @@ class PictureBatch extends Element
     getCenter: (offset, offsetY)-> error!
 
 }
-
-{
-
-}

@@ -2,7 +2,7 @@
     __NAME: [[MTLibrary]]
     __AUTHOR: [[MTadder]]
     __VERSION: {0, 8, 1}
-    __LICENSE: require('mtlib.license')!
+    __LICENSE: require('mtlib.license')
     constants: require('mtlib.constants')
     logic: require('mtlib.logic')
     math: require('mtlib.math')

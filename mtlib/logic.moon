@@ -1,26 +1,26 @@
 import p from require([[moon.all]]) -- Moonscript Standard library
-import Types from require([[mtlib.constants]])
+import types from require([[mtlib.constants]])
 
 NOP =()->nil
 isCallable = (value)->
-	if (type(value) == Types.FUNC) then return (true)
+	if (type(value) == types.FUNC) then return (true)
 	if mt = getmetatable(value) then
-		return (mt.__call != nil) and (type(mt.__call) == Types.FUNC)
+		return (mt.__call != nil) and (type(mt.__call) == types.FUNC)
 	(false)
 deepCopy = (value)->
-	if (type(value) != Types.TABLE) then return (value)
+	if (type(value) != types.TABLE) then return (value)
 	if (#value == 0) then return ({})
 	(setmetatable({k,v for k,v in pairs value}, getmetatable(value)))
 -- export combine = (t1, t2)->
 -- 	if ((t1 == nil) or (t2 == nil)) then return ((t1 or t2) or nil)
--- 	if ((type(t1) == Types.TABLE) and (type(t1) == type(t2))) then
+-- 	if ((type(t1) == types.TABLE) and (type(t1) == type(t2))) then
 -- 		r = _deepCopy(t1)
 -- 		for k,v in pairs(t2) do r[k] = v
 -- 		return r
 -- 	else return (t1 + t2)
 isInstanceOf = (value, of)->
     if (value == class) then return true
-    if (type(value) != Types.TABLE) then return (false)
+    if (type(value) != types.TABLE) then return (false)
     if (value.__class != nil) then
         val_class = value.__class
         if (of.__class != nil) then
@@ -31,7 +31,7 @@ isInstanceOf = (value, of)->
 isAncestor =(value, of)->
 	if (value == nil or of == nil) then return (false)
 	if (value.__parent) then
-		if (type(of) == Types.STRING) then return (value.__parent.__name == of)
+		if (type(of) == types.STRING) then return (value.__parent.__name == of)
 		if (of.__class) then
 			if (value.__parent == of.__class) then return (true)
 			if (value.__parent.__name == of.__class.__name) then return (true)

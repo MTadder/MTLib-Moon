@@ -1,5 +1,5 @@
 {
-    Types: {
+    types: {
         TABLE: [[table]]
         FUNC: [[function]]
         STRING: [[string]]

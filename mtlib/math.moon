@@ -1,5 +1,5 @@
 import isInstanceOf from require([[mtlib.logic]])
-import Types from require([[mtlib.constants]])
+import types from require([[mtlib.constants]])
 
 clamp =(v, l=0, u=1)-> math.max(l, math.min(v, u))
 sign =(v)-> (v < 0 and -1 or 1)
@@ -31,21 +31,21 @@ class Dyad
 		if isInstanceOf(o, 'Dyad') then
 			@Position.x = lerp(@Position.x, o.Position.x, tonumber(d))
 			@Position.y = lerp(@Position.y, o.Position.y, tonumber(d))
-		elseif (type(o) == Types.NUMBER) then
+		elseif (type(o) == types.NUMBER) then
 			@Position.x = lerp(@Position.x, o, d1)
 			@Position.x = lerp(@Position.y, d, d1)
 		(@)
 	get:=> (@Position.x), (@Position.y)
 	equals: (o, o2)=>
 		if (o == nil) then return (false)
-		elseif ((type(o) != Types.TABLE) and (o2 == nil)) then return (false)
+		elseif ((type(o) != types.TABLE) and (o2 == nil)) then return (false)
 		elseif isInstanceOf(o, 'Dyad') then
 			return ((@Position.x == o.Position.x) and (@Position.y == o.Position.y))
-		elseif ((type(o2) == Types.NUMBER) and (o != nil)) then
+		elseif ((type(o2) == types.NUMBER) and (o != nil)) then
 			return ((@Position.x == o) and (@Position.y == o2))
 		(false)
 	distance: (o=0, o2=0)=>
-		if ((type(o) == Types.NUMBER) and (type(o2) == Types.NUMBER)) then
+		if ((type(o) == types.NUMBER) and (type(o2) == types.NUMBER)) then
 			return distance(@Position.x, @Position.y, o, o2)
 		if isInstanceOf(o, 'Dyad') then
 			return @distance(o.Position.x, o.Position.y)

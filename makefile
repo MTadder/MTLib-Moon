@@ -10,4 +10,7 @@ moon:
 	@ echo compiling MTLib...
 	@ moonc mtlib/*.moon
 	@ moonc mtlib.moon
-	@ echo Done.
+
+test: clean moon
+	@ moonc test.moon
+	@ lua test.lua
