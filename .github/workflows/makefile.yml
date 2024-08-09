@@ -22,4 +22,4 @@ jobs:
     - name: compile mtlibrary
       run: |
         moonc mtlib/*.moon
-        moonc mtlibrary.moon
+        moonc mtlib.moon
