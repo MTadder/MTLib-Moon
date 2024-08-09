@@ -12,5 +12,11 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
-    - name: Run Moonscript compile
-      run: make
+    - uses: leafo/gh-actions-lua@v10
+      with:
+        luaVersion: "5.1"
+    - uses: leafo/gh-actions-luarocks@v4
+    - name: compile moonscript
+      run: |
+        luarocks install moonscript
+        moonc mtlibrary.moon
