@@ -3,7 +3,7 @@
 default: clean moon
 
 clean:
-	@ rm mtlibrary.lua -fv
+	@ rm mtlib.lua -fv
 	@ rm mtlib/*.lua -fv
 
 moon:
