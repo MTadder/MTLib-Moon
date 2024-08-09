@@ -6,7 +6,7 @@ return {
     8,
     1
   },
-  __LICENSE = dofile('mtlib.license'),
+  __LICENSE = require('mtlib.license')(),
   constants = require('mtlib.constants'),
   logic = require('mtlib.logic'),
   math = require('mtlib.math'),

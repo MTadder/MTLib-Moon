@@ -1,3 +1,4 @@
+local fileExists
 fileExists = function(filename)
   local ioF = io.open(filename, 'r+')
   local result = (ioF ~= nil)
@@ -6,6 +7,7 @@ fileExists = function(filename)
   end
   return (result)
 end
+local fileLines
 fileLines = function(filename)
   if not (fileExists(filename)) then
     return { }
@@ -20,6 +22,7 @@ fileLines = function(filename)
     return _accum_0
   end)())
 end
+local FileToucher
 do
   local _class_0
   local _base_0 = {
@@ -68,4 +71,8 @@ do
   _base_0.__class = _class_0
   FileToucher = _class_0
 end
-return { }
+return {
+  fileLines = fileLines,
+  fileExists = fileExists,
+  FileToucher = FileToucher
+}

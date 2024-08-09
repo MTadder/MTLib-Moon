@@ -1,5 +1,5 @@
 import p from require([[moon.all]]) -- Moonscript Standard library
-import Types from require([[constants]])
+import Types from require([[mtlib.constants]])
 
 NOP =()->nil
 isCallable = (value)->

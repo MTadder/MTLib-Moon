@@ -1,4 +1,4 @@
-import Types from require([[constants]])
+import Types from require([[mtlib.constants]])
 
 class UUID
 	generate =()->
@@ -46,5 +46,5 @@ serialize =(v, max_recursion=4, iteration=0)->
 	(tokens[type(v)](v))
 
 {
-    
+
 }

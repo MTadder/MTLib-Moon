@@ -19,7 +19,10 @@ jobs:
     - name: install moonscript
       run: |
         luarocks install moonscript
-    - name: compile mtlibrary
+    - name: compile mtlib
       run: |
         moonc mtlib/*.moon
         moonc mtlib.moon
+    - name: execute mtlib
+      run: |
+        lua mtlib.lua

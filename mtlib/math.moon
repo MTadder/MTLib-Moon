@@ -1,5 +1,5 @@
-import isInstanceOf from require([[logic]])
-import Types from require([[constants]])
+import isInstanceOf from require([[mtlib.logic]])
+import Types from require([[mtlib.constants]])
 
 clamp =(v, l=0, u=1)-> math.max(l, math.min(v, u))
 sign =(v)-> (v < 0 and -1 or 1)

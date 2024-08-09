@@ -1,7 +1,7 @@
 local isInstanceOf
-isInstanceOf = require([[logic]]).isInstanceOf
+isInstanceOf = require([[mtlib.logic]]).isInstanceOf
 local Types
-Types = require([[constants]]).Types
+Types = require([[mtlib.constants]]).Types
 local clamp
 clamp = function(v, l, u)
   if l == nil then

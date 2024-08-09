@@ -1,13 +1,11 @@
 -- Filesystem Utilities
 
-export ^
-
-export fileExists =(filename)->
+fileExists =(filename)->
 	ioF = io.open(filename, 'r+')
 	result = (ioF != nil)
 	if result then ioF\close!
 	(result)
-export fileLines =(filename)->
+fileLines =(filename)->
 	if not(fileExists filename) then return {}
 	([line for line in io.lines(filename)])
 class FileToucher
@@ -32,5 +30,7 @@ class FileToucher
 		if @isValid! then @file_stream\close!
 		(@)
 {
-    
+    :fileLines
+    :fileExists
+    :FileToucher
 }

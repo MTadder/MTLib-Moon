@@ -1,8 +1,8 @@
 love = (love or nil) -- Autodetect LOVE2D
 if (love == nil) then return {}
 
-import Hexad from require([[math]])
-import isCallable from require([[logic]])
+import Hexad from require([[mtlib.math]])
+import isCallable from require([[mtlib.logic]])
 
 -- @graphics
 class ShaderCode -- GLSL ES Shader Syntax

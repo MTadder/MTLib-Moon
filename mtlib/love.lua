@@ -3,9 +3,9 @@ if (love == nil) then
   return { }
 end
 local Hexad
-Hexad = require([[math]]).Hexad
+Hexad = require([[mtlib.math]]).Hexad
 local isCallable
-isCallable = require([[logic]]).isCallable
+isCallable = require([[mtlib.logic]]).isCallable
 local ShaderCode
 do
   local _class_0
