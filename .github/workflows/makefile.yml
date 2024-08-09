@@ -23,6 +23,8 @@ jobs:
       run: |
         moonc mtlib/*.moon
         moonc mtlib.moon
+        moonc test.moon
     - name: execute mtlib
-      run: |
-        lua mtlib.lua
+      run: lua mtlib.lua
+    - name: execute test
+      run: lua test.lua
