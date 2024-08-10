@@ -29,19 +29,22 @@ serialize =(what, depth=0, seen={})->
 		[types.NUMBER]: (num)-> string.format("%d", num)
 		[types.TABLE]: (t)->
 			rtn = {}
-			seen[t] = true
+			seen[t] = tostring t
 			depth += 1
 			--lines = for k,v in pairs what
 			--	(" ")\rep(depth*4).."["..tostring(k).."] = "..serialize(v, depth, seen)
 			tab = (" ")\rep(depth*4)
+			class_id = if what.__class then
+				"class: #{tostring(t)\gsub("table: ", "")} " else ""
 			for k,m in pairs(t) do
-				if (seen[m] == true) then
-					rtn[(#rtn)+1] = (tab.."recursion(#{tostring m})\n")
+				if (k == "__name") then continue
+				if (k == "__parent") then continue
+				if (seen[m] != nil) then
+					rtn[(#rtn)+1] = (tab.."[#{tostring k}] = recursion(#{tostring(m)})\n")
 				else
 					rtn[(#rtn)+1] = (tab.."[#{tostring k}] = #{serialize(m, depth, seen)}\n")
-			seen[t] = false
-			class_id = if what.__class then "class " else ""
-			return (class_id.."{\n#{table.concat(rtn, "")}\n#{(" ")\rep((depth - 1)*4)}}")
+			seen[t] = nil
+			return (class_id.."{\n#{table.concat(rtn, "")}#{(" ")\rep((depth - 1)*4)}}")
 	}
 	(tokens[type(what)](what, seen))
 

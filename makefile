@@ -11,19 +11,14 @@ else
 endif
 
 default: compile
-
 clean:
-	$(RM) $(call FixPath,mtlib/*.lua)
-	$(RM) $(call FixPath,*.lua)
-
-
+	$(RM) $(call FixPath, mtlib/*.lua)
+	$(RM) $(call FixPath, *.lua)
 compile:
 	@ echo compiling MTLib...
-	@ moonc mtlib/*.moon
-	@ moonc mtlib.moon
-
+	moonc mtlib/*.moon mtlib.moon
+	moonc mtlib.moon
 test: compile
-	@ moon test.moon
-
+	moon test.moon
 debug:
-	@ moon debug.moon
+	moon debug.moon

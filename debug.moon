@@ -1,3 +1,3 @@
-_G["mtlib"] = require [[mtlib]]
-debug.debug!
-nil
+export mtlib = require [[mtlib]]
+do debug.debug!
+(nil)
