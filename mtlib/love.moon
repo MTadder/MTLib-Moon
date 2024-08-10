@@ -1,14 +1,12 @@
-love = (love or nil) -- Autodetect LOVE2D
-if not love then
-    return nil
+love = (love or nil)
+if (love == nil) then return false
 import graphics, window from love
 
-import Hexad from require([[mtlib.math]])
-import isCallable from require([[mtlib.logic]])
-import types from require([[mtlib.constants]])
+import Hexad from require [[mtlib.math]]
+import isCallable from require [[mtlib.logic]]
+import types from require [[mtlib.constants]]
 import FileGenerator from require([[mtlib.fs]]).generators
 
--- @graphics
 class Projector
     new:=> error!
 class View
@@ -87,7 +85,6 @@ class MainGenerator extends FileGenerator
     new:=> error!
 
 {
-    :ShaderCode
     :View
     :ListView
     :GridView
