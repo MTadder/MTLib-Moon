@@ -5,6 +5,7 @@ import graphics, window from love
 import Hexad from require([[mtlib.math]])
 import isCallable from require([[mtlib.logic]])
 import types from require([[mtlib.constants]])
+import FileGenerator from require([[mtlib.fs]]).generators
 
 -- @graphics
 class Projector
@@ -79,6 +80,11 @@ class PictureBatch extends Element
                 @Quads[k] = graphics.newQuad(v.x, v.y, v.w, v.h, @Image\getDimensions!)
         (@)
 
+class ConfigGenerator extends FileGenerator -- TODO
+class MainGenerator extends FileGenerator -- TODO
+
+unused = true
+
 {
     :ShaderCode
     :View
@@ -91,6 +97,10 @@ class PictureBatch extends Element
     :Picture
     :PictureBatch
     :Projector
+    generators: {
+        :MainGenerator
+		:ConfigGenerator
+    }
     patternColorizer: (str, colors)-> error!
     scaleWindow: (ratio=1)->
         --oldW, oldH, currentFlags = window.getMode!

@@ -8,7 +8,7 @@ fileExists =(filename)->
 fileLines =(filename)->
 	if not(fileExists filename) then return {}
 	([line for line in io.lines(filename)])
-class FileToucher
+class FileGenerator
 	new: (file_name, mode)=>
 		assert(file_name, "no file name")
 		@file_name = file_name
@@ -32,5 +32,7 @@ class FileToucher
 {
     :fileLines
     :fileExists
-    :FileToucher
+    generators: {
+		:FileGenerator
+	}
 }

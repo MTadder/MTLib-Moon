@@ -18,32 +18,32 @@ class UUID
 getValueAddress =(f, l)->
 	if ((l == nil) and (type(f) == types.FUNC)) then l = true
 	return ("#{((l and "0x") or "")}#{(tostring(f)\gsub("%a*:%s*0?", "")\upper!)}")
-serialize =(v, max_recursion=4, iteration=0)->
+serialize =(what, depth=0, seen={})->
 	tokens = {
 		[types.NIL]: tostring
 		[types.FUNC]: tostring
 		[types.USERDATA]: tostring
 		[types.THREAD]: tostring
-		[types.BOOL]: (b)-> ("#{b}"\lower!)
+		[types.BOOL]: tostring
 		[types.STRING]: (s)-> string.format("%q", s)
-		[types.NUMBER]: (num)->
-			huge = (math.huge or (1/0))
-			if (num != num) then return ("NaN")
-			if (num == huge) then return ("INF")
-			if (num > huge) then return ("INF+")
-			if (num == -huge) then return ("-INF")
-			if ((num > 9999) or (num < -9999)) then return ("0x#{string.format("%x", num)\upper!}")
-			else return string.format("%d", num)
-		[types.TABLE]: (t, s={})->
+		[types.NUMBER]: (num)-> string.format("%d", num)
+		[types.TABLE]: (t)->
 			rtn = {}
-			s[t] = true
+			seen[t] = true
+			depth += 1
+			--lines = for k,v in pairs what
+			--	(" ")\rep(depth*4).."["..tostring(k).."] = "..serialize(v, depth, seen)
+			tab = (" ")\rep(depth*4)
 			for k,m in pairs(t) do
-				if (s[m] == true) then rtn[((#rtn)+1)] = ("...")
-				else rtn[((#rtn)+1)] = ("[#{serialize(k, s)}] = #{serialize(m, s)}")
-			s[t] = nil
-			return ("{#{table.concat(rtn, ", ")}}")
+				if (seen[m] == true) then
+					rtn[(#rtn)+1] = (tab.."recursion(#{tostring m})\n")
+				else
+					rtn[(#rtn)+1] = (tab.."[#{tostring k}] = #{serialize(m, depth, seen)}\n")
+			seen[t] = false
+			class_id = if what.__class then "class " else ""
+			return (class_id.."{\n#{table.concat(rtn, "")}\n#{(" ")\rep((depth - 1)*4)}}")
 	}
-	(tokens[type(v)](v))
+	(tokens[type(what)](what, seen))
 
 {
 	:UUID

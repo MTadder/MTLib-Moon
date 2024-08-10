@@ -1,2 +1,2 @@
-import p from require("moon.all")
-p require("mtlib") -- print the module
+mtlib = require [[mtlib]]
+print(mtlib.string.serialize mtlib)
