@@ -1,10 +1,11 @@
 {
     -- @Metadata
-    __NAME: [[MTLibrary]]
-    __AUTHOR: [[MTadder]]
-    __VERSION: {0, 8, 7}
-    __VERSION_NAME: [[Aptera Puff-Adder]]
-    __LICENSE: require [[mtlib.license]]
+    _NAME: [[MTLibrary]]
+    _AUTHOR: [[MTadder]]
+    _LUAVERSION: [[5.1.5]]
+    _VERSION: [[0.8.8]]
+    _VERSION_NAME: [[Aptera Puff-Adder]]
+    _LICENSE: require [[mtlib.license]]
     -- @Bindings
     ifc: require [[mtlib.ifc]]
     math: require [[mtlib.math]]
