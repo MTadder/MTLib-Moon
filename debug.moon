@@ -1,4 +1,3 @@
-require [[moon.all]]
-_G["mtlib"] = require([[mtlib]])
-do debug.debug!
-return nil
+_G["mtlib"] = require [[mtlib]]
+debug.debug!
+nil

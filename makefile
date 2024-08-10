@@ -1,20 +1,29 @@
 #!/usr/bin/make -f
 
-default: clean moon
+ifdef OS
+   RM = del /Q
+   FixPath = $(subst /,\,$1)
+else
+   ifeq ($(shell uname), Linux)
+      RM = rm -f
+      FixPath = $1
+   endif
+endif
+
+default: compile
 
 clean:
-	@ rm mtlib.lua -fv
-	@ rm mtlib/*.lua -fv
+	$(RM) $(call FixPath,mtlib/*.lua)
+	$(RM) $(call FixPath,*.lua)
 
-moon:
+
+compile:
 	@ echo compiling MTLib...
 	@ moonc mtlib/*.moon
 	@ moonc mtlib.moon
 
-test: clean moon
-	@ moonc test.moon
-	@ lua test.lua
+test: compile
+	@ moon test.moon
 
 debug:
-	@ moonc debug.moon
-	@ lua debug.lua
+	@ moon debug.moon

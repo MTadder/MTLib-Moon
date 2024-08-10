@@ -1,4 +1,3 @@
---import p from require([[moon.all]]) -- Moonscript Standard library
 import types from require([[mtlib.constants]])
 import serialize from require([[mtlib.string]])
 

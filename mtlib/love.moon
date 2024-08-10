@@ -1,5 +1,6 @@
 love = (love or nil) -- Autodetect LOVE2D
-if (love == nil) then return (nil)
+if not love then
+    return nil
 import graphics, window from love
 
 import Hexad from require([[mtlib.math]])
@@ -80,10 +81,10 @@ class PictureBatch extends Element
                 @Quads[k] = graphics.newQuad(v.x, v.y, v.w, v.h, @Image\getDimensions!)
         (@)
 
-class ConfigGenerator extends FileGenerator -- TODO
-class MainGenerator extends FileGenerator -- TODO
-
-unused = true
+class ConfigGenerator extends FileGenerator
+    new:=> error!
+class MainGenerator extends FileGenerator
+    new:=> error!
 
 {
     :ShaderCode
