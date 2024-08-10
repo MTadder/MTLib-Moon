@@ -1,1 +1,0 @@
-* When exporting a module, each value should be on it's own line.
