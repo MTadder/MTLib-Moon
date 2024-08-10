@@ -1,5 +1,6 @@
-import p from require([[moon.all]]) -- Moonscript Standard library
+--import p from require([[moon.all]]) -- Moonscript Standard library
 import types from require([[mtlib.constants]])
+import serialize from require([[mtlib.string]])
 
 NOP =()->nil
 isCallable = (value)->
@@ -52,7 +53,7 @@ class List
     combine: (withTbl)=>
         if (type(withTbl) == type.TABLE) then
             for k,v in pairs(withTbl) do @add(v, k)
-    __tostring:=> p(@Items, ', ')
+    __tostring:=> serialize(@Items, ', ')
     __len:=> #@Items
     __add: (v1, v2)->
         if (type(v1) != type.TABLE) then return (v2\add(v1))
@@ -129,7 +130,11 @@ class Timer
         (@)
 
 {
-    :isCallable, :deepCopy, :isInstanceOf,
-    :are, :areAncestors, :newArray,
+    :isCallable
+    :deepCopy
+    :isInstanceOf
+    :are
+    :areAncestors
+    :newArray
     :Timer
 }

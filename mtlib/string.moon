@@ -1,5 +1,4 @@
 import types from require([[mtlib.constants]])
-import p from require([[moon.all]])
 
 class UUID
 	generate =()->
@@ -21,12 +20,12 @@ getValueAddress =(f, l)->
 	return ("#{((l and "0x") or "")}#{(tostring(f)\gsub("%a*:%s*0?", "")\upper!)}")
 serialize =(v, max_recursion=4, iteration=0)->
 	tokens = {
-		[types.NIL]: ()-> ("NIL")
+		[types.NIL]: tostring
+		[types.FUNC]: tostring
+		[types.USERDATA]: tostring
+		[types.THREAD]: tostring
 		[types.BOOL]: (b)-> ("#{b}"\lower!)
 		[types.STRING]: (s)-> string.format("%q", s)
-		[types.USERDATA]: (u)-> ("UserData @ #{p(u)}")
-		[types.FUNC]: (f)-> ("Function @ #{p(f)}")
-		[types.THREAD]: (t)-> ("Thread @ #{p(t)}")
 		[types.NUMBER]: (num)->
 			huge = (math.huge or (1/0))
 			if (num != num) then return ("NaN")
